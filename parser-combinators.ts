@@ -20,7 +20,7 @@ class Source {
 }
 
 class ParseResult<T> {
-    constructor(public value: T, public souce: Source) { }
+    constructor(public value: T, public source: Source) { }
 }
 
 class Parser<T> {
@@ -41,10 +41,54 @@ class Parser<T> {
             throw Error(message)
         })
     }
+
+    static zeroOrMore<U>(parser: Parser<U>): Parser<Array<U>> {
+        return new Parser(source => {
+            let results: Array<U> = []
+            let item: ParseResult<U> | null
+            while (item = parser.parse(source)) {
+                source = item.source
+                results.push(item.value)
+            }
+            return new ParseResult(results, source)
+        })
+    }
+
+    static mayBe<U>(parser: Parser<U | null>): Parser<U | null> {
+        return parser.or(Parser.constant(null))
+    }
+
+    or(parser: Parser<T>): Parser<T> {
+        return new Parser(source => {
+            let result = this.parse(source)
+            if (result) return result
+            else return parser.parse(source)
+        })
+    }
+
+    bind<U>(callback: (value: T) => Parser<U>): Parser<U> {
+        return new Parser(source => {
+            let result = this.parse(source)
+            if (result) {
+                let { value, source } = result
+                return callback(value).parse(source)
+            } else return null
+        })
+    }
+
+    and<U>(parser: Parser<U>): Parser<U> {
+        return this.bind(_ => parser)
+    }
+
+    map<U>(callback: (t: T) => U): Parser<U> {
+        return this.bind(value => Parser.constant(callback(value)))
+    }
 }
 
-let souce = new Source("hello1 bye2", 0)
-let result = Parser.regexp(/hello[0-9]/y).parse(souce)
+let source = new Source("hello1 bye2", 0)
+let result = Parser.regexp(/hello[0-9]/y).parse(source)
 console.log(result)
 console.assert(result?.value === "hello1")
-console.assert(result?.souce.index === 6)
+console.assert(result?.source.index === 6)
+
+// TODO: read about commit messages feat:, fix:, refactor:, etc.    
