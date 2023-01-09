@@ -83,12 +83,19 @@ class Parser<T> {
     map<U>(callback: (t: T) => U): Parser<U> {
         return this.bind(value => Parser.constant(callback(value)))
     }
+
+    parseStringToCompletion(string: string): T {
+        let source = new Source(string, 0)
+
+        let result = this.parse(source)
+        if (!result) throw Error("Parse error at index 0")
+
+        let index = result.source.index
+        if (index !== result.source.string.length)
+            throw Error(`Parse error at index ${index}`)
+
+        return result.value
+    }
 }
 
-let source = new Source("hello1 bye2", 0)
-let result = Parser.regexp(/hello[0-9]/y).parse(source)
-console.log(result)
-console.assert(result?.value === "hello1")
-console.assert(result?.source.index === 6)
-
-// TODO: read about commit messages feat:, fix:, refactor:, etc.    
+export { Parser, ParseResult, Source }

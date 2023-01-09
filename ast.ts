@@ -41,6 +41,16 @@ class EqualsNode implements AST {
     }
 }
 
+// NotEquals (!=) operator Node
+class NotEqualsNode implements AST {
+    constructor(public left: AST, public right: AST) { }
+    equals(node: AST): boolean {
+        return node instanceof NotEqualsNode
+            && this.left.equals(node.left)
+            && this.right.equals(node.right)
+    }
+}
+
 // Add (+) operator Node
 class AddNode implements AST {
     constructor(public left: AST, public right: AST) { }
@@ -166,4 +176,24 @@ class WhileNode implements AST {
             && this.conditional.equals(node.conditional)
             && this.body.equals(node.body)
     }
+}
+
+export {
+    NumberNode,
+    IdNode,
+    NotNode,
+    IfNode,
+    BlockNode,
+    ReturnNode,
+    CallNode,
+    DivNode,
+    MulNode,
+    SubNode,
+    AddNode,
+    EqualsNode,
+    NotEqualsNode,
+    WhileNode,
+    AssignNode,
+    VarNode,
+    FunctionNode
 }
