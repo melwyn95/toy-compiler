@@ -179,6 +179,7 @@ class WhileNode implements AST {
 }
 
 export {
+    AST,
     NumberNode,
     IdNode,
     NotNode,

@@ -43,3 +43,51 @@ let MINUS = token(/[-]/y).map(_ => AST.SubNode)
 let STAR = token(/[*]/y).map(_ => AST.MulNode)
 let SLASH = token(/[/]/y).map(_ => AST.DivNode)
 
+let expression: Parser<AST.AST> =
+    Parser.error("expression parser used before definition")
+
+let args = expression.bind(arg =>
+    Parser.zeroOrMore(COMMA.and(expression)).bind(args =>
+        Parser.constant([arg, ...args])
+    )
+).or(Parser.constant([]))
+
+let call: Parser<AST.AST> = ID.bind(callee =>
+    LEFT_PAREN.and(
+        args.bind(args =>
+            RIGHT_PAREN.and(Parser.constant(new AST.CallNode(callee, args)))
+        )
+    )
+)
+
+let atom: Parser<AST.AST> =
+    call
+        .or(id)
+        .or(NUMBER)
+        .or(
+            LEFT_PAREN
+                .and(expression)
+                .bind(e => RIGHT_PAREN.and(Parser.constant(e))))
+
+let unary: Parser<AST.AST> =
+    Parser.mayBe(NOT).bind(not =>
+        atom.map(term => not ? new AST.NotNode(term) : term))
+
+let infix = (
+    operatorParser: Parser<new (left: AST.AST, right: AST.AST) => AST.AST>,
+    termParser: Parser<AST.AST>
+) =>
+    termParser.bind(term =>
+        Parser.zeroOrMore(operatorParser.bind(operator =>
+            termParser.bind(term => Parser.constant({ operator, term }))
+        )
+        ).map(operatorTerms =>
+            operatorTerms.reduce((left, { operator, term }) =>
+                new operator(left, term), term))
+    )
+
+let product: Parser<AST.AST> = infix(STAR.or(SLASH), unary)
+let sum: Parser<AST.AST> = infix(PLUS.or(MINUS), product)
+let comparison: Parser<AST.AST> = infix(EQUAL.or(NOT_EQUAL), sum)
+
+expression.parse = comparison.parse
