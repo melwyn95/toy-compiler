@@ -1,5 +1,5 @@
 import * as AST from "./ast"
-import { Parser, Source } from "./parser-combinators"
+import { Parser } from "./parser-combinators"
 
 // TODO: read about commit messages feat:, fix:, refactor:, etc.    
 
@@ -7,7 +7,7 @@ let whitespace = Parser.regexp(/[ \n\r\t]+/y)
 let comments = Parser.regexp(/[/][/].*/y).or(Parser.regexp(/[/][*].*[*][/]/sy))
 let ignore = Parser.zeroOrMore(whitespace.or(comments))
 
-let token = pattern =>
+let token = (pattern: RegExp) =>
     Parser.regexp(pattern).bind(value =>
         ignore.and(Parser.constant(value))
     )
@@ -42,7 +42,9 @@ let PLUS = token(/[+]/y).map(_ => AST.AddNode)
 let MINUS = token(/[-]/y).map(_ => AST.SubNode)
 let STAR = token(/[*]/y).map(_ => AST.MulNode)
 let SLASH = token(/[/]/y).map(_ => AST.DivNode)
+let ASSIGN = token(/=/y).map(_ => AST.AssignNode)
 
+// Expression
 let expression: Parser<AST.AST> =
     Parser.error("expression parser used before definition")
 
@@ -91,3 +93,123 @@ let sum: Parser<AST.AST> = infix(PLUS.or(MINUS), product)
 let comparison: Parser<AST.AST> = infix(EQUAL.or(NOT_EQUAL), sum)
 
 expression.parse = comparison.parse
+
+// Statement
+let statement: Parser<AST.AST> =
+    Parser.error("statement parser used before definition")
+
+let returnStatement: Parser<AST.AST> =
+    RETURN.and(expression).bind(term =>
+        SEMICOLON.and(Parser.constant(new AST.ReturnNode(term))))
+
+let expressionStatement: Parser<AST.AST> =
+    expression.bind(term => SEMICOLON.and(Parser.constant(term)))
+
+let ifStatement: Parser<AST.AST> =
+    IF.and(LEFT_PAREN).and(expression).bind(conditional =>
+        RIGHT_PAREN.and(statement).bind(consequence =>
+            ELSE.and(statement).bind(alternative =>
+                Parser.constant(
+                    new AST.IfNode(conditional, consequence, alternative)
+                )
+            )
+        )
+    )
+
+let whileStatement: Parser<AST.AST> =
+    WHILE.and(LEFT_PAREN).and(expression).bind(conditional =>
+        RIGHT_PAREN.and(statement).bind(body =>
+            Parser.constant(new AST.WhileNode(conditional, body))
+        )
+    )
+
+let varStatement: Parser<AST.AST> =
+    VAR.and(ID).bind(name =>
+        ASSIGN.and(expression).bind(value =>
+            SEMICOLON.and(Parser.constant(new AST.VarNode(name, value)))
+        )
+    )
+
+let assignmentStatement: Parser<AST.AST> =
+    ID.bind(name =>
+        ASSIGN.and(expression).bind(value =>
+            SEMICOLON.and(Parser.constant(new AST.AssignNode(name, value)))
+        )
+    )
+
+let blockStatement: Parser<AST.AST> =
+    LEFT_BRACE.and(Parser.zeroOrMore(statement)).bind(statements =>
+        RIGHT_BRACE.and(Parser.constant(new AST.BlockNode(statements)))
+    )
+
+let parameters: Parser<Array<string>> =
+    ID.bind(param =>
+        Parser.zeroOrMore(COMMA.and(ID)).bind(params =>
+            Parser.constant([param, ...params])
+        )
+    ).or(Parser.constant([]))
+
+let functionStatement: Parser<AST.AST> =
+    FUNCTION.and(ID).bind(name =>
+        LEFT_PAREN.and(parameters).bind(parameters =>
+            RIGHT_PAREN.and(blockStatement).bind(block =>
+                Parser.constant(new AST.FunctionNode(name, parameters, block))
+            )
+        )
+    )
+
+let statementParser: Parser<AST.AST> =
+    returnStatement
+        .or(ifStatement)
+        .or(whileStatement)
+        .or(varStatement)
+        .or(assignmentStatement)
+        .or(blockStatement)
+        .or(functionStatement)
+        .or(expressionStatement)
+
+statement.parse = statementParser.parse
+
+let parser: Parser<AST.AST> =
+    ignore
+        .and(Parser.zeroOrMore(statement))
+        .map(statements => new AST.BlockNode(statements))
+
+// Integration Test
+let source = `
+  function factorial(n) {
+    var result = 1;
+    while (n != 1) {
+        result = result * n;
+        n = n - 1;
+    }
+    return result;
+  }
+`
+
+let got = parser.parseStringToCompletion(source)
+let expected = new AST.BlockNode([
+    new AST.FunctionNode("factorial", ["n"], new AST.BlockNode([
+        new AST.VarNode("result", new AST.NumberNode(1)),
+        new AST.WhileNode(
+            new AST.NotEqualsNode(
+                new AST.IdNode("n"),
+                new AST.NumberNode(1)
+            ),
+            new AST.BlockNode([
+                new AST.AssignNode("result",
+                    new AST.MulNode(
+                        new AST.IdNode("result"),
+                        new AST.IdNode("n"))
+                ),
+                new AST.AssignNode("n",
+                    new AST.SubNode(new AST.IdNode("n"),
+                        new AST.NumberNode(1)
+                    )
+                )
+            ])),
+        new AST.ReturnNode(new AST.IdNode("result"))
+    ]))
+])
+
+console.assert(got.equals(expected))
