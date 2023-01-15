@@ -40,6 +40,8 @@ ARM is based on load-store architecture.
 
 ### All registers
 
+```
+
 +----+  +----------+ 
 | r0 |  | r8       | 
 +----+  +----------+ 
@@ -61,6 +63,8 @@ ARM is based on load-store architecture.
 +------+
 | CPSR | (Current Program Status Register)
 +------+
+
+```
 
 ## Instructions
 
@@ -87,7 +91,9 @@ add r1, r2, #0xFA00
 ```
 
 When the immediate operand is too big, the instruction encode the `even` number 
-of time the operand must be shifted.
+of times the operand must be shifted.
+
+```
 
 +-------------+--+---------+---------+---------+---------+-----------------+
 |1 1 1 0 0 0 1 0 | 1 0 0 0 | 0 0 1 0 | 0 0 0 1 | 0 0 1 0 | 1 1 1 1 1 0 1 0 |
@@ -95,4 +101,112 @@ of time the operand must be shifted.
               ^            ^         ^         ^         ^                 ^
               |     add    |    r2   |    r1   |  shift  |       0xFA      |  
               +------------+---------+---------+---------+-----------------+
+
+```
+
+### Signed, unsigned & 2's complemetn
+
+two's complement is a binarg representation for negative number which allows
+for using the same hardware adder.
+
+Two's Complement = Invert the bits & Add 1
+
+```
+twos_complement(x) => ~x + 1
+```
+
+  0b1111_1100  ---> 252 or -4
++ 0b0000_0010  --->   2 or  2
+--------------
+  0b1111_1110  ---> 254 or -2
+
+### Range of Signed & Unsigned number (binary)
+
+```
+
++-------------+-----------+-----------+
+| Bit pattern |  Unsigned | Signed    |
++-------------+-----------+-----------+
+| 0b0000_0000 |     0     |     0     |
+| 0b0000_0001 |     1     |     1     |
+| 0b0000_0010 |     2     |     2     |
+|     ...     |    ...    |    ...    |
+| 0b0000_1101 |    125    |    125    |
+| 0b0000_1110 |    126    |    126    |
+| 0b0000_1111 |    127    |    127    |
+|     ...     |    ...    | overflow  |
+| 0b1000_0000 |    128    |   -128    |
+| 0b1000_0001 |    129    |   -127    |
+| 0b1000_0010 |    130    |   -126    |
+|     ...     |    ...    |    ...    |
+| 0b1111_1100 |    252    |    -4     |
+| 0b1111_1101 |    253    |    -3     |
+| 0b1111_1110 |    254    |    -2     |
+| 0b1111_1111 |    255    |    -1     |
+|     ...     |  overflow |    ...    |
+| 0b0000_0000 |     0     |     0     |
+| 0b0000_0001 |     1     |     1     |
+| 0b0000_0010 |     2     |     2     |
+| 0b0000_0011 |     3     |     3     |
+|     ...     |    ...    |    ...    |
++-------------+-----------+-----------+
+
+```
+
+### Arithmetic & Logic instructions
+
+```
+
++-------------------+------------------+-----------------+
+|    Instruction    |     Mnemonic     |      Effect     |
++-------------------+------------------+-----------------+
+|   add r1, r2, r3  |      Add         | r1 = r2 + r2;   |
+|   sum r1, r2, r3  |      Subtract    | r1 = r2 - r3;   |
+|   mul r1, r2, r3  |      Multiply    | r1 = r2 * r3;   |
+|  sdiv r1, r2, r3  |   Signed divide  | r1 = r2 / r3;   |
+|  udiv r1, r2, r3  |  Unsigned divide | r1 = r2 / r3;   |
+|   bic r1, r2, r3  |   Bitwise clear  | r1 = r2 & ~r3;  |
+|   and r1, r2, r3  |   Bitwise and    | r1 = r2 & r3;   |
+|   orr r1, r2, r3  |   Bitwise or     | r1 = r2 | r3;   |
+|   eor r1, r2, r3  |   Bitwise xor    | r1 = r2 ^ r3;   |
++-------------------+------------------+-----------------+
+
+
+```
+
+### Move instruction
+
+Copy one word between registers. (or move immediate operand to register)
+
++-------------------+------------------+-----------------+
+|    Instruction    |     Mnemonic     |      Effect     |
++-------------------+------------------+-----------------+
+| mov r1, r2        |       Move       |     r1 = r2;    |
+| mvn r1, r2        |     Move-not     |     r1 = ~r2;   |
++-------------------+------------------+-----------------+
+
+### Program Counter
+
+Program Counter is a pointer to the currently executing instruction.
+
+```
+mov pc, r0
+```
+
+Note: Every instruction affects the program counter 
+(i.e. It is atleat incremented by 4 bytes (next instruction))
+
+```
+add r1, r2, r3 /* pc += 4; r1 = r2 + r3; */
+```
+
+```
+mov r0, #0      /* pc += 4; r0 = 0      */
+add r0, r0, #1  /* pc += 4; r0 = r0 + 1 */
+add r0, r0, #1  /* pc += 4; r0 = r0 + 1 */
+add pc, pc, #8  /* pc += 4; pc = pc + 8 */
+add r0, r0, #1  /*    ... skipped ...   */
+add r0, r0, #1  /*    ... skipped ...   */
+add r0, r0, #1  /* pc += 4; r0 = r0 + 1 */
+```
 
