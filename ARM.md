@@ -178,12 +178,16 @@ twos_complement(x) => ~x + 1
 
 Copy one word between registers. (or move immediate operand to register)
 
+```
+
 +-------------------+------------------+-----------------+
 |    Instruction    |     Mnemonic     |      Effect     |
 +-------------------+------------------+-----------------+
 | mov r1, r2        |       Move       |     r1 = r2;    |
 | mvn r1, r2        |     Move-not     |     r1 = ~r2;   |
 +-------------------+------------------+-----------------+
+
+```
 
 ### Program Counter
 
@@ -210,3 +214,60 @@ add r0, r0, #1  /*    ... skipped ...   */
 add r0, r0, #1  /* pc += 4; r0 = r0 + 1 */
 ```
 
+### Branch Instruction
+
+Branch instruction jumps to a label (some instruction), The assemblem calculates,
+The offsets that need to be applied to pc.
+
+```
+  mov r0, #0
+  add r0, r0, #1
+  add r0, r0, #1
+  b myLabel      /* pc = myLabel */
+  add r0, r0, #1 /* ... skipped ... */
+  add r0, r0, #1 /* ... skipped ... */
+myLabel:
+  add r0, r0, #1
+```
+
+### Branch and Exchange
+
+The b (branch) instruction jumps to a label relative to pc, the bx (branch & 
+exhange) instruction jumps to an address stored in a register.
+
+```
+bx r0 /* pc = r0 */
+```
+
+This is similar to `mov pc, r0`
+
+### Branch and Link
+
+Similar to Branch (b) along with jumping it stores previous the values of pc
+in the link register (r14).
+
+```
+bl myLabel /* lr = pc ; pc = myLabel */
+```
+
+```
+mov lr, pc;
+b muLabel;
+```
+
+bl is commonly used to implement funcation calls.
+
+### Intra-procedure-call scratch register
+
+b & bl are capable of jumping +- 32 MR of address space, If a jump of more than
+32 MB is required the linker will arrage for veneer: jump to special place 
+within 32 MB and then load a full 32 bit address into pc, if a longer jump is 
+required.
+
+intra-procedure-call scratch register: r12 or ip, most relevant for funtion call
+it is used between function calls, after the caller calls but before the control
+transferes to the callee funtion.
+
+Also scratch register, because it is best suited for temporary values.
+
+### Function call basics
