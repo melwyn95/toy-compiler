@@ -160,9 +160,9 @@ twos_complement(x) => ~x + 1
 +-------------------+------------------+-----------------+
 |    Instruction    |     Mnemonic     |      Effect     |
 +-------------------+------------------+-----------------+
-|   add r1, r2, r3  |      Add         | r1 = r2 + r2;   |
-|   sum r1, r2, r3  |      Subtract    | r1 = r2 - r3;   |
-|   mul r1, r2, r3  |      Multiply    | r1 = r2 * r3;   |
+|   add r1, r2, r3  |       Add        | r1 = r2 + r2;   |
+|   sum r1, r2, r3  |     Subtract     | r1 = r2 - r3;   |
+|   mul r1, r2, r3  |     Multiply     | r1 = r2 * r3;   |
 |  sdiv r1, r2, r3  |   Signed divide  | r1 = r2 / r3;   |
 |  udiv r1, r2, r3  |  Unsigned divide | r1 = r2 / r3;   |
 |   bic r1, r2, r3  |   Bitwise clear  | r1 = r2 & ~r3;  |
@@ -232,7 +232,7 @@ myLabel:
 
 ### Branch and Exchange
 
-The b (branch) instruction jumps to a label relative to pc, the bx (branch & 
+The `b` (branch) instruction jumps to a label relative to `pc`, the `bx` (branch & 
 exhange) instruction jumps to an address stored in a register.
 
 ```
@@ -243,8 +243,8 @@ This is similar to `mov pc, r0`
 
 ### Branch and Link
 
-Similar to Branch (b) along with jumping it stores previous the values of pc
-in the link register (r14).
+Similar to Branch (`b`) along with jumping it stores previous the values of `pc`
+in the link register (`r14`).
 
 ```
 bl myLabel /* lr = pc ; pc = myLabel */
@@ -259,15 +259,109 @@ bl is commonly used to implement funcation calls.
 
 ### Intra-procedure-call scratch register
 
-b & bl are capable of jumping +- 32 MR of address space, If a jump of more than
-32 MB is required the linker will arrage for veneer: jump to special place 
-within 32 MB and then load a full 32 bit address into pc, if a longer jump is 
+`b` & `bl` are capable of jumping +- 32 MR of address space, If a jump of more 
+than 32 MB is required the linker will arrage for veneer: jump to special place 
+within 32 MB and then load a full 32 bit address into `pc`, if a longer jump is 
 required.
 
-intra-procedure-call scratch register: r12 or ip, most relevant for funtion call
-it is used between function calls, after the caller calls but before the control
-transferes to the callee funtion.
+intra-procedure-call scratch register: `r12` or `ip`, most relevant for funtion 
+call it is used between function calls, after the caller calls but before the
+control transferes to the callee funtion.
 
 Also scratch register, because it is best suited for temporary values.
 
 ### Function call basics
+
+bl stores the return address in the register lr
+
+```
+  mov r0, #0       /* r0 = 0; */
+  bl addFourtyTwo  /* lr = pc; pc = addFourtyTwo */
+  sub r0, #3       /* r0 = r0 - 3; */
+addFourtyTwo:
+  add r0, r0, #42  /* r0 = ro + 42; */
+  bx lr            /* pc = lr; */
+```
+
+### Link register
+
+`lr` (`r14`) is a special register that `bl` works with. before jumping `bl` 
+stores the return address in `r14` or `lr`.
+
+It call link register because it creates a link between caller & callee.
+
+### Conditional Execution (CPSR register)
+
+- Comparison instruction `cmp` compares 2 register or 1 register & 1 immediate
+  value and saves the resul of comparison in `CPSR` register.
+- An instruction(s) with *comditional code* read the `CPRS` and execures or not
+  depending on the condition code. 
+
+`CPSR`: Current Program Status Register.
+
+```
+cmp r1, r2     /* cprs = compare(r1, r2); */
+moveq r1, #10  /* if (eq(cprs)) { r1 = 10; } */
+mov r2, #20    /* r2 = 20 */
+moval r3, #20  /* r3 = 20 */
+movne r4, #30  /* if (ne(cprs)) { r4 = 30; } */
+```
+
+`mov`   - set value into register
+`moveq` - set value into register if result of `cmp` was equal
+`movne` - set value into register if result of `cmp` was not equal
+`moval` - same as `mov`
+
+Condition Codes:
+
+```
+
++------+----------+--------------------+-----------------+
+| Code | Operator |    Description     | Signed/Unsigned |
++------+----------+--------------------+-----------------+
+|  eq  |   ==     |     Equal          |     Either      |
+|  ne  |   !=     |   Not equal        |     Either      |
+|      |          |                    |                 |
+|  gt  |   >      | Greater Than       |     Signed      |
+|  ge  |   >=     | Greater Than equal |     Signed      |
+|  lt  |   <      | Less Than          |     Signed      |
+|  le  |   <=     | Less Than equal    |     Signed      |
+|      |          |                    |                 |
+|  hi  |   >      | Greater Than       |    Unsigned     |
+|  hs  |   >=     | Greater Than equal |    Unsigned     |
+|  lo  |   <      | Less Than          |    Unsigned     |
+|  ls  |   <=     | Less Than equal    |    Unsigned     |
+|      |          |                    |                 |
+|  al  |   __     |  Always (default)  |     ____        | 
++------+----------+--------------------+-----------------+
+
+```
+
+The condition codes can be added to almost any ARM instruction.
+
+ARM instuction set is orthogonal: conditional execution is available regardless
+of instruction type.
+
+### Conditional Branching
+
+Conditional branching is acheived by combining branch instruction `b` with 
+condition codes. Conditional branching is used to implement `if`, `else`, `for`,
+`while`.
+
+### Loader
+
+Loader is an operating system program which copies the assembly program from
+disk into memory & sets the `pc` (program counter) to execute from `main`.
+
+  The real entry point is called `_start`, when `libc` is linked the execution
+  starts from `libc`'s `_start` which set's things up like the command line args
+  internally the `main` will be called (which needs to be defined in `.global`).
+
+### Data & Code sections
+
+Data segment declared with `.data` directive is read, write, but not execute.
+
+Code segment declared with `.text` directive is read, but not write, execute.
+
+### Segmentation fault
+
