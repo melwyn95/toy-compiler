@@ -365,3 +365,13 @@ Code segment declared with `.text` directive is read, but not write, execute.
 
 ### Segmentation fault
 
+It can happen when we try write to a read-only segment.
+
+In general segmentation fault is all kinds of memory access violation.
+
+In the [example](./asm/segmentation_fault.s) the segmentation fault is because
+the string hello is not aligned (4 bytes boundary)
+This can be solved by padding the string with additional `\0`'s untill it is 
+aligned, or we can use `.balign 4` to align it.
+
+`.balign n` always aligns at a boundary specified as a number of bytes ( `n`) 
