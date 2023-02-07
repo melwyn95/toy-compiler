@@ -374,4 +374,68 @@ the string hello is not aligned (4 bytes boundary)
 This can be solved by padding the string with additional `\0`'s untill it is 
 aligned, or we can use `.balign 4` to align it.
 
-`.balign n` always aligns at a boundary specified as a number of bytes ( `n`) 
+`.balign n` always aligns at a boundary specified as a number of bytes ( `n`)
+
+### Data directive
+
+`.string` & `.word`
+
+`.string` - zero terminated (`\0`) string
+
+`.word`   - literal machine work (numeric notation)
+
+It is good to put labels before data diretives.
+
+```asm
+fourtyTwo:
+  .word 42
+```
+
+Data directives are another encoding for binary data.
+
+```asm
+.global main
+main:
+  .word 0xE3A0002A /* Same as `mov r0, #42` */
+  bx lr
+```
+
+### Loading data
+
+Loading data from RAM to Registers.
+
+```asm
+ldr r0, =hello
+bl printf
+```
+
+We can load the address of any word using `ldr`.
+
+```asm
+ldr r1, =myWord  /*   Referencing: r1 = myWord */
+ldr r0, [r1]     /* Dereferencing: r0 = M[r1]  */
+
+myWord:
+  .word 42
+```
+
+When address of another word is stored in register, it is called *pointer*,
+it *references* another word.
+
+When a word which referenced by a pointer is loaded, it is called *dereferecing*
+using the notaion `[]`
+
+When the constant we are trying to load does not fit into an *immediate* value,
+It will dereference it via a temporary word.
+
+```asm
+ldr r1, =temporaryWord /* r1 = temporaryWord */
+ldr r1, [r1]           /* r1 = M[r1]         */
+
+...
+
+temporaryWord:
+  .word 42     /* can be any large data */
+```
+
+This expansion of instruction is called *pseudo-instruction*.
