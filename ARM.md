@@ -439,3 +439,65 @@ temporaryWord:
 ```
 
 This expansion of instruction is called *pseudo-instruction*.
+
+### Load with immediate offset
+
+It is possible to load data from a label with an *offset*
+
+```asm
+myArray:
+  .word 42
+  .word 44
+  .word 46
+```
+
+can also be written as
+
+```asm
+myArray:
+  .word 42, 44, 46
+```
+
+To load the third word (`46`) we have the following syntax.
+
+```asm
+ldr r1, =myArray  /* r1 = myArray   */
+ldr r0, [r1, #8]  /* r0 = M[r1 + 8] */
+```
+
+The offset can be positive or negative. Also it can be immediate.
+
+```asm
+ldr r0, [r1, -r2] /* r0 = M[r1 - r2] */
+```
+
+### Storing data
+
+Storing data means copying data from register into memory (Registers -> RAM)
+
+Data can be stored in `.data` segment, stack & heap.
+
+Store instruction has the mnemonic `str` & syntax is same as `ldr` instruction.
+
+```asm
+str r0, [r1] /* M[r1] = r0 */
+ldr r0, [r1] /* r0 = M[r1] */
+
+str r0, [r1, #8] /* M[r1 + 8] = r0 */
+ldr r0, [r1, #8] /* r0 = M[r1 + 8] */
+
+str r0, [r1, -r2] /* M[r1 - r2] = r0 */
+ldr r0, [r1, -r2] /* r0 = M[r1 - r2] */
+```
+
+### Stack
+
+Stack is a memory segment used to implement nested and recursive function calls.
+
+When working with stack we need to follow the *calling convention*
+(We need to follow the calling convention so that function written in diffent
+languages or using different compiler can ineroperate).
+
+e.g. When calling `printf` from `libc` we need to following calling convention.
+(Also when we want other functions to call user defined function like `main`
+we need to follow the convention.)
