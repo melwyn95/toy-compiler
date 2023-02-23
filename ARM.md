@@ -501,3 +501,131 @@ languages or using different compiler can ineroperate).
 e.g. When calling `printf` from `libc` we need to following calling convention.
 (Also when we want other functions to call user defined function like `main`
 we need to follow the convention.)
+
+### Push and pop
+
+*stack pointer* refers to the address of *top of the stack*.
+
+It also referred as `r13` or `sp`.
+
+The stack *grows* towards the smaller addressed & *shrinks* towards larger 
+addresses.
+
+```
+push {r0, r1, r2, r3} // push 4 words onto the stack.
+```
+
+Effect of `push` instruction on the stack. (words are copied from registers 
+to the stack)
+
+```
+Before:
+
+     Registers           Stack                                        
+   +-----------+     +-----------+                                      
+r0 |     10    |     |           |                                      
+   +-----------+     +-----------+                                      
+r1 |     20    |     |           |                                      
+   +-----------+     +-----------+                                      
+r2 |     30    |     |           |                                      
+   +-----------+     +-----------+                                      
+r3 |     40    |     |           |                                      
+   +-----------+     +-----------+                                      
+   |    ...    |     |           |                                      
+   +-----------+     +-----------+                                      
+fp |           |     |           |                                      
+   +-----------+     +-----------+                                      
+ip |           |     |           |                                      
+   +-----------+     +-----------+                                      
+sp |     O-----|---->|           |                                      
+   +-----------+     +-----------+                                      
+lr |           |     |           |                                      
+   +-----------+     +-----------+                                      
+pc |           |     |           |                                      
+   +-----------+     +-----------+                                      
+
+After:
+
+
+     Registers           Stack                                        
+   +-----------+     +-----------+                                      
+r0 |     10    |     |           |                                      
+   +-----------+     +-----------+                                      
+r1 |     20    |     |           |                                      
+   +-----------+     +-----------+                                      
+r2 |     30    |     |           |                                      
+   +-----------+     +-----------+                                      
+r3 |     40    |  +->|    10     |                                      
+   +-----------+  |  +-----------+                                      
+   |    ...    |  |  |    20     |                                      
+   +-----------+  |  +-----------+                                      
+fp |           |  |  |    30     |                                      
+   +-----------+  |  +-----------+                                      
+ip |           |  |  |    40     |                                      
+   +-----------+  |  +-----------+                                      
+sp |     O-----|--+  |           |                                      
+   +-----------+     +-----------+                                      
+lr |           |     |           |                                      
+   +-----------+     +-----------+                                      
+pc |           |     |           |                                      
+   +-----------+     +-----------+                                      
+
+
+```
+
+This can effectively be done by *decrementing* the stack pointer (`sp`).
+As stack grows towards smaller addresses.
+
+```
+sub sp, sp, #16  // decrement the stack pointer by 16 bytes (4 words)
+str r0, [sp, #0]
+str r1, [sp, #4]
+str r2, [sp, #8]
+str r3, [sp, #12]
+```
+
+or alternately
+
+```
+push {r3}
+push {r2}
+push {r1}
+push {r0}
+```
+
+the `pop` instruction is counterpart to `push` instruction.
+
+```
+pop {r0, r1, r2, r3}
+```
+
+This instruction reverses the effect of the `push` instruction i.e. 
+1. It *increments* the `sp` by 16 bytes.
+2. Copies the values from stack into registers.
+
+```
+pop {r0}
+pop {r1}
+pop {r2}
+pop {r3}
+```
+
+These instructions `push` & `pop` use curly braces (`{}`) notation, this kinda
+signifies set notation. The order in which you write the register does not 
+matter.
+
+```
+push {r3, r1, r2, r0} // Same as: push {r0, r1, r2, r3}
+```
+
+The order is picked so that `pop` undo's the effect of `push`.
+- Lower register (e.g. `r0`) are pushed to and popped from lower memory 
+  addresses.
+- Higher registers (e.g. `r15`) are push to and popped from lower memory
+  addresses.
+
+The `push` & `pop` instruction's have dedicated 16-bit flag in their encoding,
+So that they can express which registers to `push` or `pop` but not their order.
+
+The order is picked such that `pop` operation would undo the effect of
+corresponding `push` operation.
