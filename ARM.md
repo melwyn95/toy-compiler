@@ -764,3 +764,126 @@ is responsible for saving the register's onto the stack.
 +----------+------------------------------------+------------------------------+
 
 ```
+
+### Frame pointer
+
+Frame pointer (`r11`/`fp`) points to the start of the function's *frame*.
+
+A function frame is also called *stack frame*, *call frame*, *activation record*
+
+*frame pointer* points to the *base* of the frame. (address where 
+*stack pointer* used to point to when function was called.)
+
+The area between *frame pointer* and *stack pointer* is the current function's
+stack frame.
+
+By convention we save the old *frame pointer* in the stack slot which is pointed
+by the current *frame pointer*. (In this way we get a linked-list of 
+stack frames, the head is the current *frame pointer* & intermediate links are
+stack saved frame pointers of the callers.)
+
+It is optional to use *frame pointer* register (like it is optional to maintain
+the linked-list of stack frames), Is is used by debuggers & useful to implement
+exception handling.
+
+The *frame pointer* does not change after a function is called so it is
+convinient to refer to data on stack (local variables, function arguments)
+relative to the frame pointer.
+
+```
+
+    Registers                Stack
+                            
+                             ....       
+                        +--------------+        
+                        |              |  
+    +--------+          +--------------+-------------------+
+    |   sp   |--------->|              |                   |       
+    +--------+          +--------------+                   |     
+                        |              |                   |  
+                        +--------------+                   | Current Frame  
+                        |              |                   |      
+    +--------+          +--------------+                   |           
+    |   fp   |--------->|        ------|----+              |     
+    +--------+          +--------------+<---|--------------+  
+                        |              |    |              |   
+                        +--------------+    |              |      
+                        |              |    |              | Caller's Frame         
+                        +--------------+    |              |         
+                        |        ------|<---+----+         |        
+                        +--------------+<--------|---------+                  
+                        |              |         |         |          
+                        +--------------+         |         |        
+                        |              |         |         | Caller's caller's        
+                        +--------------+         |         |      Frame  
+                        |              |         |         |        
+                        +--------------+         |         |         
+                        |        ------|<--------+----+    |          
+                        +--------------+<-------------|----+             
+                        |              |              |             
+                        +--------------+              |           
+                             ....                    ... 
+
+```
+
+### Function definitions
+
+When a simple function is called it does not need to allocate anything on stack.
+
+```
+addFourtyTwo:
+  add r0, r0, #42
+  bx lr
+```
+
+In this case the function doesn't use any *call-preserved* registers, so nothing
+need to save on the stack.
+
+But when a function calls another function we need to save & retrieve values 
+from the stack.
+
+```
+.global main
+main:
+  push {ip, lr}
+  ldr r0, =hello
+  bl printf
+  mov r0, #41
+  add r0, r0, #1
+  pop {ip, lr}
+  bc lr
+```
+
+The call to function `printf` will clobber the *call-clobbered* register, so we
+need to save those registers (`lr`) on the stack.
+
+When maintaning linked-list of stack frames, We need to push both `lr` & `fp` to
+the stack, and then set the new frame pointer to the stack pointer. Using `fp`
+makes it easy to deallocate from the stack (`mov sp, fp`).
+
+Setting up & Restoring from the stack is call *prologue* & *epilogue*.
+
+```
+.global main
+main:
+  push {fp, lr}  // Function's
+  mov fp, sp     // prologue
+  ...
+  mov sp, fp     // Function's
+  pop {fp, lr}   // epilogue
+  bx lr
+```
+
+Function's prologue saves the call-preserved register & sets up the 
+frame pointer, Function's epilogue reverses this and exits the function.
+
+In order to make the function's epilogue shoter we can `pop {fp, pc}`,
+because in the epilogue to return from the function we do `bx lr`,
+which is the same as `mov pc, lr`. So if we pop the `lr` into `pc` we can
+shorten the epilogue (efficitent).
+
+```
+mov sp, fp   // Function's
+pop {fp, pc} // epilogue
+```
+
