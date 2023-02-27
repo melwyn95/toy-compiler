@@ -629,3 +629,138 @@ So that they can express which registers to `push` or `pop` but not their order.
 
 The order is picked such that `pop` operation would undo the effect of
 corresponding `push` operation.
+
+### Stack alignment
+
+When calling `libc` functions the stack pointer (`sp`) needs to aligned at the
+8-byte (2-word) boundary. (*`external interfaces`*)
+
+For us *the stack pointer should always be 8-byte (2-word) aligned*.
+
+If we want to push just a single word onto the stack, We push some dummy register
+to maintain stack alignment
+
+```
+push {r4} // The stack won't be aligned with this
+
+push {ip, r4} // By pushing the dummy (`ip`) register we maintain stack alignment
+```
+
+In the `main` function example, we push the `ip` register to maintain stack
+alignment.
+
+```
+.global main
+main:
+  push {ip, lr}
+  ...
+```
+
+In general to maintain stack alignment we can push a dummy register.
+
+### Arguments and return value
+
+Function arguments are passed in first four registers `r0-r3`, i.e. first four
+argument to the function are passed in the registers `r0-r3`.
+
+These registers are sometimes called as *argument registers*.
+
+The rest of the arguments are passed by pushing them onto the stack.
+
+For a function call like `f(10, 20, 30, 40, 50, 60)` we need to generate the 
+following assembly
+
+```
+
+mov r0, #50
+mov r1, #60
+push {r0, r1}  // 50 & 60 go onto the stack
+mov r0, #10    // 10, 20, 30 & 40 go into registers
+mov r1, #20
+mov r2, #30
+mov r3, #40
+bl f           // Actual function call
+add sp, sp, #8 // Deallocate 2 words of stack
+
+```
+
+It is the callers responsibility to deallocate the stack space used for extra
+arguments (> 5).
+
+After a function returns, the return value is expected in the register `r0`.
+(If the function returns a 64-bit value then it can span the registers `r0-r1`).
+
+### Register conventions
+
+When a function call is made some registers are *clobbered* after the 
+call returns, and some registers are *preserved*.
+
+Registers `r0-r3` which are used to pass arguments to the function are 
+*call-clobbered* (since there can be nested function calls).
+
+The link register `lr`/`r14` is *call-clobbered* by design of the instruction
+`bl`, which overwrites `lr` with the return address.
+
+The `ip`/`r12` register is also *call-clobbered* by linker generated veneer.
+
+Other registes are *call-preserved*, If a function makes changes to such 
+registers, it the responsiblity of function to restore the original values 
+before returning from the call.
+
+*call-clobbered* registers are a good fit for passing function arguments.
+
+*call-preserved* registers are a good git for variables.
+
+`r4-r10` are sometimes called as *variable registers*.
+
+The stack pointer (`sp`/`r11`), frame pointer (`fp`/`r13`) and 
+program counter (`pc`/`r15`) are *call-preserved* registers.
+
+In order to preserve *call-preserved* registers, when the call starts these
+registers (only the one's that need to preserved) are push onto the stack, and 
+these values are poped back into registers before returning the call, in short
+we are *saving* these register on the stack.
+
+There is an alternate terminology for *call-clobbered* & *call-preserved*,
+they are *callee-saved* & *caller-saved*, This referes to which side of the call
+is responsible for saving the register's onto the stack.
+
+```
+
++----------+------------------------------------+------------------------------+
+| Register |                Role                |          Convention          |
++----------+------------------------------------+------------------------------+
+| r0       | Argument/Return register           | Call Clobbered               |
++----------+------------------------------------+------------------------------+
+| r1       | Argument register                  | Call Clobbered               |
++----------+------------------------------------+------------------------------+
+| r2       | Argument register                  | Call Clobbered               |
++----------+------------------------------------+------------------------------+
+| r3       | Argument register                  | Call Clobbered               |
++----------+------------------------------------+------------------------------+
+| r4       | Variable register                  | Call Preserved               |
++----------+------------------------------------+------------------------------+
+| r5       | Variable register                  | Call Preserved               |
++----------+------------------------------------+------------------------------+
+| r6       | Variable register                  | Call Preserved               |
++----------+------------------------------------+------------------------------+
+| r7       | Variable register                  | Call Preserved               |
++----------+------------------------------------+------------------------------+
+| r8       | Variable register                  | Call Preserved               |
++----------+------------------------------------+------------------------------+
+| r9       | Variable register                  | Call Preserved               |
++----------+------------------------------------+------------------------------+
+| r10      | Variable register                  | Call Preserved               |
++----------+------------------------------------+------------------------------+
+| r11 (fp) | Frame pointer                      | Call Preserved               |
++----------+------------------------------------+------------------------------+
+| r12 (ip) | Intra-procedure scratch register   | Call Clobbered               |
++----------+------------------------------------+------------------------------+
+| r13 (sp) | Stack pointer                      | Call Preserved               |
++----------+------------------------------------+------------------------------+
+| r14 (lr) | Link register                      | Call Clobbered               |
++----------+------------------------------------+------------------------------+
+| r15 (pc) | Program counter                    | Call Preserved               |
++----------+------------------------------------+------------------------------+
+
+```
