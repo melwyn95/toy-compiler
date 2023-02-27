@@ -115,10 +115,12 @@ Two's Complement = Invert the bits & Add 1
 twos_complement(x) => ~x + 1
 ```
 
+```
   0b1111_1100  ---> 252 or -4
 + 0b0000_0010  --->   2 or  2
 --------------
   0b1111_1110  ---> 254 or -2
+```
 
 ### Range of Signed & Unsigned number (binary)
 
@@ -193,18 +195,18 @@ Copy one word between registers. (or move immediate operand to register)
 
 Program Counter is a pointer to the currently executing instruction.
 
-```
+```asm
 mov pc, r0
 ```
 
 Note: Every instruction affects the program counter 
 (i.e. It is atleat incremented by 4 bytes (next instruction))
 
-```
+```asm
 add r1, r2, r3 /* pc += 4; r1 = r2 + r3; */
 ```
 
-```
+```asm
 mov r0, #0      /* pc += 4; r0 = 0      */
 add r0, r0, #1  /* pc += 4; r0 = r0 + 1 */
 add r0, r0, #1  /* pc += 4; r0 = r0 + 1 */
@@ -219,7 +221,7 @@ add r0, r0, #1  /* pc += 4; r0 = r0 + 1 */
 Branch instruction jumps to a label (some instruction), The assemblem calculates,
 The offsets that need to be applied to pc.
 
-```
+```asm
   mov r0, #0
   add r0, r0, #1
   add r0, r0, #1
@@ -235,7 +237,7 @@ myLabel:
 The `b` (branch) instruction jumps to a label relative to `pc`, the `bx` (branch & 
 exhange) instruction jumps to an address stored in a register.
 
-```
+```asm
 bx r0 /* pc = r0 */
 ```
 
@@ -246,11 +248,11 @@ This is similar to `mov pc, r0`
 Similar to Branch (`b`) along with jumping it stores previous the values of `pc`
 in the link register (`r14`).
 
-```
+```asm
 bl myLabel /* lr = pc ; pc = myLabel */
 ```
 
-```
+```asm
 mov lr, pc;
 b muLabel;
 ```
@@ -274,7 +276,7 @@ Also scratch register, because it is best suited for temporary values.
 
 bl stores the return address in the register lr
 
-```
+```asm
   mov r0, #0       /* r0 = 0; */
   bl addFourtyTwo  /* lr = pc; pc = addFourtyTwo */
   sub r0, #3       /* r0 = r0 - 3; */
@@ -299,7 +301,7 @@ It call link register because it creates a link between caller & callee.
 
 `CPSR`: Current Program Status Register.
 
-```
+```asm
 cmp r1, r2     /* cprs = compare(r1, r2); */
 moveq r1, #10  /* if (eq(cprs)) { r1 = 10; } */
 mov r2, #20    /* r2 = 20 */
@@ -511,7 +513,7 @@ It also referred as `r13` or `sp`.
 The stack *grows* towards the smaller addressed & *shrinks* towards larger 
 addresses.
 
-```
+```asm
 push {r0, r1, r2, r3} // push 4 words onto the stack.
 ```
 
@@ -546,7 +548,6 @@ pc |           |     |           |
 
 After:
 
-
      Registers           Stack                                        
    +-----------+     +-----------+                                      
 r0 |     10    |     |           |                                      
@@ -576,7 +577,7 @@ pc |           |     |           |
 This can effectively be done by *decrementing* the stack pointer (`sp`).
 As stack grows towards smaller addresses.
 
-```
+```asm
 sub sp, sp, #16  // decrement the stack pointer by 16 bytes (4 words)
 str r0, [sp, #0]
 str r1, [sp, #4]
@@ -586,7 +587,7 @@ str r3, [sp, #12]
 
 or alternately
 
-```
+```asm
 push {r3}
 push {r2}
 push {r1}
@@ -595,7 +596,7 @@ push {r0}
 
 the `pop` instruction is counterpart to `push` instruction.
 
-```
+```asm
 pop {r0, r1, r2, r3}
 ```
 
@@ -603,7 +604,7 @@ This instruction reverses the effect of the `push` instruction i.e.
 1. It *increments* the `sp` by 16 bytes.
 2. Copies the values from stack into registers.
 
-```
+```asm
 pop {r0}
 pop {r1}
 pop {r2}
@@ -614,7 +615,7 @@ These instructions `push` & `pop` use curly braces (`{}`) notation, this kinda
 signifies set notation. The order in which you write the register does not 
 matter.
 
-```
+```asm
 push {r3, r1, r2, r0} // Same as: push {r0, r1, r2, r3}
 ```
 
@@ -640,7 +641,7 @@ For us *the stack pointer should always be 8-byte (2-word) aligned*.
 If we want to push just a single word onto the stack, We push some dummy register
 to maintain stack alignment
 
-```
+```asm
 push {r4} // The stack won't be aligned with this
 
 push {ip, r4} // By pushing the dummy (`ip`) register we maintain stack alignment
@@ -649,7 +650,7 @@ push {ip, r4} // By pushing the dummy (`ip`) register we maintain stack alignmen
 In the `main` function example, we push the `ip` register to maintain stack
 alignment.
 
-```
+```asm
 .global main
 main:
   push {ip, lr}
@@ -670,7 +671,7 @@ The rest of the arguments are passed by pushing them onto the stack.
 For a function call like `f(10, 20, 30, 40, 50, 60)` we need to generate the 
 following assembly
 
-```
+```asm
 
 mov r0, #50
 mov r1, #60
@@ -830,7 +831,7 @@ relative to the frame pointer.
 
 When a simple function is called it does not need to allocate anything on stack.
 
-```
+```asm
 addFourtyTwo:
   add r0, r0, #42
   bx lr
@@ -842,7 +843,7 @@ need to save on the stack.
 But when a function calls another function we need to save & retrieve values 
 from the stack.
 
-```
+```asm
 .global main
 main:
   push {ip, lr}
@@ -863,7 +864,7 @@ makes it easy to deallocate from the stack (`mov sp, fp`).
 
 Setting up & Restoring from the stack is call *prologue* & *epilogue*.
 
-```
+```asm
 .global main
 main:
   push {fp, lr}  // Function's
@@ -882,8 +883,10 @@ because in the epilogue to return from the function we do `bx lr`,
 which is the same as `mov pc, lr`. So if we pop the `lr` into `pc` we can
 shorten the epilogue (efficitent).
 
-```
+```asm
 mov sp, fp   // Function's
 pop {fp, pc} // epilogue
 ```
+
+### Heap
 
