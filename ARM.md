@@ -74,7 +74,7 @@ All ARM instructions are encoded into 32-bit words
 
 3-operand instruction
 
-```asm
+```arm
 add r1, r2, r3
 ```
 
@@ -84,7 +84,7 @@ r1 = r2 + r3
 
 ### Immediante operands
 
-```asm
+```arm
 add r1, r2, #6400
 
 add r1, r2, #0xFA00
@@ -195,18 +195,18 @@ Copy one word between registers. (or move immediate operand to register)
 
 Program Counter is a pointer to the currently executing instruction.
 
-```asm
+```arm
 mov pc, r0
 ```
 
 Note: Every instruction affects the program counter 
 (i.e. It is atleat incremented by 4 bytes (next instruction))
 
-```asm
+```arm
 add r1, r2, r3 /* pc += 4; r1 = r2 + r3; */
 ```
 
-```asm
+```arm
 mov r0, #0      /* pc += 4; r0 = 0      */
 add r0, r0, #1  /* pc += 4; r0 = r0 + 1 */
 add r0, r0, #1  /* pc += 4; r0 = r0 + 1 */
@@ -221,7 +221,7 @@ add r0, r0, #1  /* pc += 4; r0 = r0 + 1 */
 Branch instruction jumps to a label (some instruction), The assemblem calculates,
 The offsets that need to be applied to pc.
 
-```asm
+```arm
   mov r0, #0
   add r0, r0, #1
   add r0, r0, #1
@@ -237,7 +237,7 @@ myLabel:
 The `b` (branch) instruction jumps to a label relative to `pc`, the `bx` (branch & 
 exhange) instruction jumps to an address stored in a register.
 
-```asm
+```arm
 bx r0 /* pc = r0 */
 ```
 
@@ -248,11 +248,11 @@ This is similar to `mov pc, r0`
 Similar to Branch (`b`) along with jumping it stores previous the values of `pc`
 in the link register (`r14`).
 
-```asm
+```arm
 bl myLabel /* lr = pc ; pc = myLabel */
 ```
 
-```asm
+```arm
 mov lr, pc;
 b muLabel;
 ```
@@ -276,7 +276,7 @@ Also scratch register, because it is best suited for temporary values.
 
 bl stores the return address in the register lr
 
-```asm
+```arm
   mov r0, #0       /* r0 = 0; */
   bl addFourtyTwo  /* lr = pc; pc = addFourtyTwo */
   sub r0, #3       /* r0 = r0 - 3; */
@@ -301,7 +301,7 @@ It call link register because it creates a link between caller & callee.
 
 `CPSR`: Current Program Status Register.
 
-```asm
+```arm
 cmp r1, r2     /* cprs = compare(r1, r2); */
 moveq r1, #10  /* if (eq(cprs)) { r1 = 10; } */
 mov r2, #20    /* r2 = 20 */
@@ -388,14 +388,14 @@ aligned, or we can use `.balign 4` to align it.
 
 It is good to put labels before data diretives.
 
-```asm
+```arm
 fourtyTwo:
   .word 42
 ```
 
 Data directives are another encoding for binary data.
 
-```asm
+```arm
 .global main
 main:
   .word 0xE3A0002A /* Same as `mov r0, #42` */
@@ -406,14 +406,14 @@ main:
 
 Loading data from RAM to Registers.
 
-```asm
+```arm
 ldr r0, =hello
 bl printf
 ```
 
 We can load the address of any word using `ldr`.
 
-```asm
+```arm
 ldr r1, =myWord  /*   Referencing: r1 = myWord */
 ldr r0, [r1]     /* Dereferencing: r0 = M[r1]  */
 
@@ -430,7 +430,7 @@ using the notaion `[]`
 When the constant we are trying to load does not fit into an *immediate* value,
 It will dereference it via a temporary word.
 
-```asm
+```arm
 ldr r1, =temporaryWord /* r1 = temporaryWord */
 ldr r1, [r1]           /* r1 = M[r1]         */
 
@@ -446,7 +446,7 @@ This expansion of instruction is called *pseudo-instruction*.
 
 It is possible to load data from a label with an *offset*
 
-```asm
+```arm
 myArray:
   .word 42
   .word 44
@@ -455,21 +455,21 @@ myArray:
 
 can also be written as
 
-```asm
+```arm
 myArray:
   .word 42, 44, 46
 ```
 
 To load the third word (`46`) we have the following syntax.
 
-```asm
+```arm
 ldr r1, =myArray  /* r1 = myArray   */
 ldr r0, [r1, #8]  /* r0 = M[r1 + 8] */
 ```
 
 The offset can be positive or negative. Also it can be immediate.
 
-```asm
+```arm
 ldr r0, [r1, -r2] /* r0 = M[r1 - r2] */
 ```
 
@@ -481,7 +481,7 @@ Data can be stored in `.data` segment, stack & heap.
 
 Store instruction has the mnemonic `str` & syntax is same as `ldr` instruction.
 
-```asm
+```arm
 str r0, [r1] /* M[r1] = r0 */
 ldr r0, [r1] /* r0 = M[r1] */
 
@@ -513,7 +513,7 @@ It also referred as `r13` or `sp`.
 The stack *grows* towards the smaller addressed & *shrinks* towards larger 
 addresses.
 
-```asm
+```arm
 push {r0, r1, r2, r3} // push 4 words onto the stack.
 ```
 
@@ -577,7 +577,7 @@ pc |           |     |           |
 This can effectively be done by *decrementing* the stack pointer (`sp`).
 As stack grows towards smaller addresses.
 
-```asm
+```arm
 sub sp, sp, #16  // decrement the stack pointer by 16 bytes (4 words)
 str r0, [sp, #0]
 str r1, [sp, #4]
@@ -587,7 +587,7 @@ str r3, [sp, #12]
 
 or alternately
 
-```asm
+```arm
 push {r3}
 push {r2}
 push {r1}
@@ -596,7 +596,7 @@ push {r0}
 
 the `pop` instruction is counterpart to `push` instruction.
 
-```asm
+```arm
 pop {r0, r1, r2, r3}
 ```
 
@@ -604,7 +604,7 @@ This instruction reverses the effect of the `push` instruction i.e.
 1. It *increments* the `sp` by 16 bytes.
 2. Copies the values from stack into registers.
 
-```asm
+```arm
 pop {r0}
 pop {r1}
 pop {r2}
@@ -615,7 +615,7 @@ These instructions `push` & `pop` use curly braces (`{}`) notation, this kinda
 signifies set notation. The order in which you write the register does not 
 matter.
 
-```asm
+```arm
 push {r3, r1, r2, r0} // Same as: push {r0, r1, r2, r3}
 ```
 
@@ -641,7 +641,7 @@ For us *the stack pointer should always be 8-byte (2-word) aligned*.
 If we want to push just a single word onto the stack, We push some dummy register
 to maintain stack alignment
 
-```asm
+```arm
 push {r4} // The stack won't be aligned with this
 
 push {ip, r4} // By pushing the dummy (`ip`) register we maintain stack alignment
@@ -650,7 +650,7 @@ push {ip, r4} // By pushing the dummy (`ip`) register we maintain stack alignmen
 In the `main` function example, we push the `ip` register to maintain stack
 alignment.
 
-```asm
+```arm
 .global main
 main:
   push {ip, lr}
@@ -671,7 +671,7 @@ The rest of the arguments are passed by pushing them onto the stack.
 For a function call like `f(10, 20, 30, 40, 50, 60)` we need to generate the 
 following assembly
 
-```asm
+```arm
 
 mov r0, #50
 mov r1, #60
@@ -831,7 +831,7 @@ relative to the frame pointer.
 
 When a simple function is called it does not need to allocate anything on stack.
 
-```asm
+```arm
 addFourtyTwo:
   add r0, r0, #42
   bx lr
@@ -843,7 +843,7 @@ need to save on the stack.
 But when a function calls another function we need to save & retrieve values 
 from the stack.
 
-```asm
+```arm
 .global main
 main:
   push {ip, lr}
@@ -864,7 +864,7 @@ makes it easy to deallocate from the stack (`mov sp, fp`).
 
 Setting up & Restoring from the stack is call *prologue* & *epilogue*.
 
-```asm
+```arm
 .global main
 main:
   push {fp, lr}  // Function's
@@ -883,10 +883,39 @@ because in the epilogue to return from the function we do `bx lr`,
 which is the same as `mov pc, lr`. So if we pop the `lr` into `pc` we can
 shorten the epilogue (efficitent).
 
-```asm
+```arm
 mov sp, fp   // Function's
 pop {fp, pc} // epilogue
 ```
 
 ### Heap
 
+When a program need to allocate memory dynamically at run-time it is allocated 
+on the *heap* segment.
+
+The program asks the operating system to allocate/deallocate a region of memory
+at runtime. This is done via the `libc` functions (`malloc` & `free`) which
+eventually make the system-calls.
+
+The function `malloc` takes a single argument into `r0` specifies how many 
+bytes to allocate. It returns a pointer in `r0` which points to the newly
+allocated region of memory.
+
+The function `free` take a single argument into `r0` which specifies the address
+of the region of memory to deallocate.
+
+```arm
+.global main
+main:
+  push {ip, lr}    // Prologue
+
+  mov r0, #4       // Allocate 4 bytes
+  bl malloc        // (one word)
+
+  mov r3, #42      // Store 42 into
+  str r3, [r0, #0] // that word
+
+  bl free          // Free/deallocate
+
+  pop {ip, lr}     // Epilogue
+```
