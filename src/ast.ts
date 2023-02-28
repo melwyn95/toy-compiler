@@ -266,6 +266,48 @@ class WhileNode implements AST {
     }
 }
 
+/* Nodes of testing */
+
+// Main function node
+class Main implements AST {
+    constructor(public statements: Array<AST>) { }
+
+    emit() { 
+        emit(`.global main`)
+        emit(`main:`)
+        emit(`  push {fp, lr}`)
+        this.statements.forEach(stm =>
+            stm.emit()
+        )
+        emit(`  mov r0, #0`)
+        emit(`  pop {fp, pc}`)
+    }
+
+    equals(node: AST): boolean {
+        return node instanceof Main
+            && this.statements.length === node.statements.length
+            && this.statements.every((stm, i) => stm.equals(node.statements[i]))
+    }
+}
+
+// Assert node
+class Assert implements AST {
+    constructor(public condition: AST) { }
+
+    emit() { 
+        this.condition.emit()
+        emit(`  cmp r0, #1`)
+        emit(`  moveq r0, #'.'`)
+        emit(`  movneq r0, #'F'`)
+        emit(`  bl putchar`)
+    }
+
+    equals(node: AST): boolean {
+        return node instanceof Assert
+            && this.condition.equals(node.condition)
+    }
+}
+
 export {
     AST,
     NumberNode,
@@ -284,5 +326,8 @@ export {
     WhileNode,
     AssignNode,
     VarNode,
-    FunctionNode
+    FunctionNode,
+
+    Main,
+    Assert,
 }

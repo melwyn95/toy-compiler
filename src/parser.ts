@@ -57,7 +57,11 @@ let args = expression.bind(arg =>
 let call: Parser<AST.AST> = ID.bind(callee =>
     LEFT_PAREN.and(
         args.bind(args =>
-            RIGHT_PAREN.and(Parser.constant(new AST.CallNode(callee, args)))
+            RIGHT_PAREN.and(
+                Parser.constant(
+                    callee === "assert"
+                        ? new AST.Assert(args[0])
+                        : new AST.CallNode(callee, args)))
         )
     )
 )
@@ -153,7 +157,10 @@ let functionStatement: Parser<AST.AST> =
     FUNCTION.and(ID).bind(name =>
         LEFT_PAREN.and(parameters).bind(parameters =>
             RIGHT_PAREN.and(blockStatement).bind(block =>
-                Parser.constant(new AST.FunctionNode(name, parameters, block))
+                Parser.constant(
+                    name === "main"
+                        ? new AST.Main((block as AST.BlockNode).statements)
+                        : new AST.FunctionNode(name, parameters, block))
             )
         )
     )
@@ -213,3 +220,9 @@ let expected = new AST.BlockNode([
 ])
 
 console.assert(got.equals(expected))
+
+// Test prologue & epilogue emit
+new AST.Main([]).emit()
+
+// Test assert
+// new AST.Assert(new AST.NumberNode(1)).emit()
