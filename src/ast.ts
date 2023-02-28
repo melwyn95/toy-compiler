@@ -1,5 +1,8 @@
+let emit = console.log
+
 interface AST {
-    equals(node: AST): boolean
+    emit(): void;
+    equals(node: AST): boolean;
 }
 
 /* AST Nodes */
@@ -7,6 +10,11 @@ interface AST {
 // Number node
 class NumberNode implements AST {
     constructor(public value: number) { }
+
+    emit() {
+        throw Error("Not implemented yet");
+    }
+
     equals(node: AST): boolean {
         return node instanceof NumberNode
             && node.value === this.value
@@ -16,6 +24,11 @@ class NumberNode implements AST {
 // Identifier Node
 class IdNode implements AST {
     constructor(public value: string) { }
+
+    emit() {
+        throw Error("Not implemented yet");
+    }
+
     equals(node: AST): boolean {
         return node instanceof IdNode
             && node.value === this.value
@@ -25,6 +38,11 @@ class IdNode implements AST {
 // Not (!) operator Node
 class NotNode implements AST {
     constructor(public term: AST) { }
+
+    emit() {
+        throw Error("Not implemented yet");
+    }
+
     equals(node: AST): boolean {
         return node instanceof NotNode
             && this.term.equals(node.term)
@@ -34,6 +52,11 @@ class NotNode implements AST {
 // Equals (==) operator Node
 class EqualsNode implements AST {
     constructor(public left: AST, public right: AST) { }
+
+    emit() {
+        throw Error("Not implemented yet");
+    }
+
     equals(node: AST): boolean {
         return node instanceof EqualsNode
             && this.left.equals(node.left)
@@ -44,6 +67,11 @@ class EqualsNode implements AST {
 // NotEquals (!=) operator Node
 class NotEqualsNode implements AST {
     constructor(public left: AST, public right: AST) { }
+
+    emit() {
+        throw Error("Not implemented yet");
+    }
+
     equals(node: AST): boolean {
         return node instanceof NotEqualsNode
             && this.left.equals(node.left)
@@ -54,6 +82,11 @@ class NotEqualsNode implements AST {
 // Add (+) operator Node
 class AddNode implements AST {
     constructor(public left: AST, public right: AST) { }
+
+    emit() {
+        throw Error("Not implemented yet");
+    }
+
     equals(node: AST): boolean {
         return node instanceof AddNode
             && this.left.equals(node.left)
@@ -64,6 +97,11 @@ class AddNode implements AST {
 // Sub (-) operator Node
 class SubNode implements AST {
     constructor(public left: AST, public right: AST) { }
+
+    emit() {
+        throw Error("Not implemented yet");
+    }
+
     equals(node: AST): boolean {
         return node instanceof SubNode
             && this.left.equals(node.left)
@@ -74,6 +112,11 @@ class SubNode implements AST {
 // Mul (*) operator Node
 class MulNode implements AST {
     constructor(public left: AST, public right: AST) { }
+
+    emit() {
+        throw Error("Not implemented yet");
+    }
+
     equals(node: AST): boolean {
         return node instanceof MulNode
             && this.left.equals(node.left)
@@ -84,6 +127,11 @@ class MulNode implements AST {
 // Div (/) operator Node
 class DivNode implements AST {
     constructor(public left: AST, public right: AST) { }
+
+    emit() {
+        throw Error("Not implemented yet");
+    }
+
     equals(node: AST): boolean {
         return node instanceof DivNode
             && this.left.equals(node.left)
@@ -94,6 +142,11 @@ class DivNode implements AST {
 // Function Call/Application Node
 class CallNode implements AST {
     constructor(public callee: string, public args: Array<AST>) { }
+
+    emit() {
+        throw Error("Not implemented yet");
+    }
+
     equals(node: AST): boolean {
         return node instanceof CallNode
             && this.callee == node.callee
@@ -104,6 +157,11 @@ class CallNode implements AST {
 // Return Node
 class ReturnNode implements AST {
     constructor(public term: AST) { }
+
+    emit() {
+        throw Error("Not implemented yet");
+    }
+
     equals(node: AST): boolean {
         return node instanceof ReturnNode
             && this.term.equals(node.term)
@@ -113,6 +171,11 @@ class ReturnNode implements AST {
 // Block Node
 class BlockNode implements AST {
     constructor(public statements: Array<AST>) { }
+
+    emit() {
+        throw Error("Not implemented yet");
+    }
+
     equals(node: AST): boolean {
         return node instanceof BlockNode
             && this.statements.length === node.statements.length
@@ -125,6 +188,11 @@ class IfNode implements AST {
     constructor(public conditional: AST,
         public consequence: AST,
         public alternative: AST) { }
+
+    emit() {
+        throw Error("Not implemented yet");
+    }
+
     equals(node: AST): boolean {
         return node instanceof IfNode
             && this.conditional.equals(node.conditional)
@@ -138,6 +206,11 @@ class FunctionNode implements AST {
     constructor(public name: string,
         public parameters: Array<string>,
         public body: AST) { }
+
+    emit() {
+        throw Error("Not implemented yet");
+    }
+
     equals(node: AST): boolean {
         return node instanceof FunctionNode
             && this.name === node.name
@@ -151,6 +224,11 @@ class FunctionNode implements AST {
 // Variable Declaration Node
 class VarNode implements AST {
     constructor(public name: string, public value: AST) { }
+
+    emit() {
+        throw Error("Not implemented yet");
+    }
+
     equals(node: AST): boolean {
         return node instanceof VarNode
             && this.name === node.name
@@ -161,6 +239,11 @@ class VarNode implements AST {
 // Assignment Node 
 class AssignNode implements AST {
     constructor(public name: string, public value: AST) { }
+
+    emit() {
+        throw Error("Not implemented yet");
+    }
+
     equals(node: AST): boolean {
         return node instanceof AssignNode
             && this.name === node.name
@@ -171,6 +254,11 @@ class AssignNode implements AST {
 // While Loop Node
 class WhileNode implements AST {
     constructor(public conditional: AST, public body: AST) { }
+
+    emit() {
+        throw Error("Not implemented yet");
+    }
+
     equals(node: AST): boolean {
         return node instanceof WhileNode
             && this.conditional.equals(node.conditional)
