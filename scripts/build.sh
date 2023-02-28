@@ -5,6 +5,6 @@ npx tsc --strict \
         --target es6 \
         --outDir _build \
         --watch \
-        compiler
+        src/compiler
 
 # rm -rf _build
