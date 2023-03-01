@@ -57,7 +57,13 @@ class EqualsNode implements AST {
     constructor(public left: AST, public right: AST) { }
 
     emit() {
-        throw Error("Not implemented yet");
+        this.left.emit()
+        emit(`  push {r0, ip}`)
+        this.right.emit()
+        emit(`  pop {r1, ip}`)
+        emit(`  cmp r0, r1`)
+        emit(`  moveq r0, #1`)
+        emit(`  movne r0, #0`)
     }
 
     equals(node: AST): boolean {
@@ -72,7 +78,13 @@ class NotEqualsNode implements AST {
     constructor(public left: AST, public right: AST) { }
 
     emit() {
-        throw Error("Not implemented yet");
+        this.left.emit()
+        emit(`  push {r0, ip}`)
+        this.right.emit()
+        emit(`  pop {r1, ip}`)
+        emit(`  cmp r0, r1`)
+        emit(`  moveq r0, #0`)
+        emit(`  movne r0, #1`)
     }
 
     equals(node: AST): boolean {
@@ -87,7 +99,11 @@ class AddNode implements AST {
     constructor(public left: AST, public right: AST) { }
 
     emit() {
-        throw Error("Not implemented yet");
+        this.left.emit()
+        emit(`  push {r0, ip}`)
+        this.right.emit()
+        emit(`  pop {r1, ip}`)
+        emit(`  add r0, r0, r1`)
     }
 
     equals(node: AST): boolean {
@@ -102,7 +118,11 @@ class SubNode implements AST {
     constructor(public left: AST, public right: AST) { }
 
     emit() {
-        throw Error("Not implemented yet");
+        this.left.emit()
+        emit(`  push {r0, ip}`)
+        this.right.emit()
+        emit(`  pop {r1, ip}`)
+        emit(`  sub r0, r1, r0`)
     }
 
     equals(node: AST): boolean {
@@ -117,7 +137,11 @@ class MulNode implements AST {
     constructor(public left: AST, public right: AST) { }
 
     emit() {
-        throw Error("Not implemented yet");
+        this.left.emit()
+        emit(`  push {r0, ip}`)
+        this.right.emit()
+        emit(`  pop {r1, ip}`)
+        emit(`  mul r0, r0, r1`)
     }
 
     equals(node: AST): boolean {
@@ -132,7 +156,11 @@ class DivNode implements AST {
     constructor(public left: AST, public right: AST) { }
 
     emit() {
-        throw Error("Not implemented yet");
+        this.left.emit()
+        emit(`  push {r0, ip}`)
+        this.right.emit()
+        emit(`  pop {r1, ip}`)
+        emit(`  udiv r0, r0, r1`)
     }
 
     equals(node: AST): boolean {
