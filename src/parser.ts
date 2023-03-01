@@ -221,8 +221,11 @@ let expected = new AST.BlockNode([
 
 console.assert(got.equals(expected))
 
-// Test prologue & epilogue emit
-new AST.Main([]).emit()
-
-// Test assert
-// new AST.Assert(new AST.NumberNode(1)).emit()
+// Test main & assert
+parser.parseStringToCompletion(`
+    function main() {
+        assert(1);
+        assert(0);
+        assert(!0);
+    }
+`).emit()

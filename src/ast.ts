@@ -12,7 +12,7 @@ class NumberNode implements AST {
     constructor(public value: number) { }
 
     emit() {
-        throw Error("Not implemented yet");
+        emit(`  ldr r0, =${this.value}`)
     }
 
     equals(node: AST): boolean {
@@ -40,7 +40,10 @@ class NotNode implements AST {
     constructor(public term: AST) { }
 
     emit() {
-        throw Error("Not implemented yet");
+        this.term.emit()
+        emit(`  cmp r0, #0`)
+        emit(`  moveq r0, #1`)
+        emit(`  movne r0, #0`)
     }
 
     equals(node: AST): boolean {
@@ -173,7 +176,7 @@ class BlockNode implements AST {
     constructor(public statements: Array<AST>) { }
 
     emit() {
-        throw Error("Not implemented yet");
+        this.statements.forEach(stm => stm.emit())
     }
 
     equals(node: AST): boolean {
@@ -298,7 +301,7 @@ class Assert implements AST {
         this.condition.emit()
         emit(`  cmp r0, #1`)
         emit(`  moveq r0, #'.'`)
-        emit(`  movneq r0, #'F'`)
+        emit(`  movne r0, #'F'`)
         emit(`  bl putchar`)
     }
 
