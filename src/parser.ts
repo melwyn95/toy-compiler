@@ -31,6 +31,9 @@ let RIGHT_BRACE = token(/[}]/y)
 let NUMBER =
     token(/[0-9]+/y).map(digits => new AST.NumberNode(parseInt(digits)))
 
+let CHAR_LITERAL =
+    token(/'.'|'[\n\r\t]'/y).map(char => new AST.NumberNode(char.charCodeAt(1)))
+
 let ID = token(/[a-zA-Z_][a-zA-Z0-9_]*/y)
 let id = ID.map(x => new AST.IdNode(x))
 
@@ -70,6 +73,7 @@ let atom: Parser<AST.AST> =
     call
         .or(id)
         .or(NUMBER)
+        .or(CHAR_LITERAL)
         .or(
             LEFT_PAREN
                 .and(expression)
@@ -232,5 +236,26 @@ parser.parseStringToCompletion(`
             assert(0);
             assert(1);
         }
+        putchar(97);
+        putchar('A');
+        putchar('R');
+        putchar('M');
+        assert(rand() != 42);
+
+        if (1) {
+            putchar('I');
+        } else {
+            putchar('E');
+        }
+
+        if (0) {
+            putchar('I');
+        } else {
+            putchar('E');
+        }
+        putchar('\n');
+        putchar('\t');
+        putchar('H');
+        putchar('\n');
     }
 `).emit()

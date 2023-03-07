@@ -1,5 +1,18 @@
 let emit = console.log
 
+class Label {
+    static counter = 0
+    value: number
+
+    constructor() {
+        this.value = Label.counter++
+    }
+
+    toString() {
+        return `.L${this.value}`
+    }
+}
+
 interface AST {
     emit(): void;
     equals(node: AST): boolean;
@@ -175,7 +188,24 @@ class CallNode implements AST {
     constructor(public callee: string, public args: Array<AST>) { }
 
     emit() {
-        throw Error("Not implemented yet");
+        let n_args = this.args.length
+        if (n_args === 0) {
+            emit(`  bl ${this.callee}`)
+        } else if (n_args === 1) {
+            this.args[0].emit()
+            emit(`  bl ${this.callee}`)
+        } else if (n_args >= 2 && n_args <= 4) {
+            emit(`  sub sp, sp, #16`)
+            this.args.forEach((arg, i) => {
+                arg.emit()
+                emit(`  str r0, [sp, #${4 * i}]`)
+            })
+            emit(`  pop {r0, r1, r2, r3}`)
+            emit(`  bl ${this.callee}`)
+        } else {
+            throw Error(
+                "TODO: Add support for more than 4 args in function call")
+        }
     }
 
     equals(node: AST): boolean {
@@ -221,7 +251,16 @@ class IfNode implements AST {
         public alternative: AST) { }
 
     emit() {
-        throw Error("Not implemented yet");
+        let ifFalseLabel = new Label()
+        let endIfLabel = new Label()
+        this.conditional.emit()
+        emit(`  cmp r0, #0`)
+        emit(`  beq ${ifFalseLabel}`)
+        this.consequence.emit()
+        emit(`  b ${endIfLabel}`)
+        emit(`${ifFalseLabel}:`)
+        this.alternative.emit()
+        emit(`${endIfLabel}:`)
     }
 
     equals(node: AST): boolean {
@@ -303,7 +342,7 @@ class WhileNode implements AST {
 class Main implements AST {
     constructor(public statements: Array<AST>) { }
 
-    emit() { 
+    emit() {
         emit(`.global main`)
         emit(`main:`)
         emit(`  push {fp, lr}`)
@@ -325,7 +364,7 @@ class Main implements AST {
 class Assert implements AST {
     constructor(public condition: AST) { }
 
-    emit() { 
+    emit() {
         this.condition.emit()
         emit(`  cmp r0, #1`)
         emit(`  moveq r0, #'.'`)
