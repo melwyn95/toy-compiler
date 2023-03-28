@@ -1,5 +1,9 @@
 let emit = console.log
 
+class Environment {
+    constructor(public locals: Map<string, number>) { }
+}
+
 class Label {
     static counter = 0
     value: number
@@ -14,7 +18,7 @@ class Label {
 }
 
 interface AST {
-    emit(): void;
+    emit(env: Environment): void;
     equals(node: AST): boolean;
 }
 
@@ -38,7 +42,7 @@ class NumberNode implements AST {
 class IdNode implements AST {
     constructor(public value: string) { }
 
-    emit() {
+    emit(env: Environment) {
         throw Error("Not implemented yet");
     }
 
@@ -52,8 +56,8 @@ class IdNode implements AST {
 class NotNode implements AST {
     constructor(public term: AST) { }
 
-    emit() {
-        this.term.emit()
+    emit(env: Environment) {
+        this.term.emit(env)
         emit(`  cmp r0, #0`)
         emit(`  moveq r0, #1`)
         emit(`  movne r0, #0`)
@@ -69,10 +73,10 @@ class NotNode implements AST {
 class EqualsNode implements AST {
     constructor(public left: AST, public right: AST) { }
 
-    emit() {
-        this.left.emit()
+    emit(env: Environment) {
+        this.left.emit(env)
         emit(`  push {r0, ip}`)
-        this.right.emit()
+        this.right.emit(env)
         emit(`  pop {r1, ip}`)
         emit(`  cmp r0, r1`)
         emit(`  moveq r0, #1`)
@@ -90,10 +94,10 @@ class EqualsNode implements AST {
 class NotEqualsNode implements AST {
     constructor(public left: AST, public right: AST) { }
 
-    emit() {
-        this.left.emit()
+    emit(env: Environment) {
+        this.left.emit(env)
         emit(`  push {r0, ip}`)
-        this.right.emit()
+        this.right.emit(env)
         emit(`  pop {r1, ip}`)
         emit(`  cmp r0, r1`)
         emit(`  moveq r0, #0`)
@@ -111,10 +115,10 @@ class NotEqualsNode implements AST {
 class AddNode implements AST {
     constructor(public left: AST, public right: AST) { }
 
-    emit() {
-        this.left.emit()
+    emit(env: Environment) {
+        this.left.emit(env)
         emit(`  push {r0, ip}`)
-        this.right.emit()
+        this.right.emit(env)
         emit(`  pop {r1, ip}`)
         emit(`  add r0, r0, r1`)
     }
@@ -130,10 +134,10 @@ class AddNode implements AST {
 class SubNode implements AST {
     constructor(public left: AST, public right: AST) { }
 
-    emit() {
-        this.left.emit()
+    emit(env: Environment) {
+        this.left.emit(env)
         emit(`  push {r0, ip}`)
-        this.right.emit()
+        this.right.emit(env)
         emit(`  pop {r1, ip}`)
         emit(`  sub r0, r1, r0`)
     }
@@ -149,10 +153,10 @@ class SubNode implements AST {
 class MulNode implements AST {
     constructor(public left: AST, public right: AST) { }
 
-    emit() {
-        this.left.emit()
+    emit(env: Environment) {
+        this.left.emit(env)
         emit(`  push {r0, ip}`)
-        this.right.emit()
+        this.right.emit(env)
         emit(`  pop {r1, ip}`)
         emit(`  mul r0, r0, r1`)
     }
@@ -168,10 +172,10 @@ class MulNode implements AST {
 class DivNode implements AST {
     constructor(public left: AST, public right: AST) { }
 
-    emit() {
-        this.left.emit()
+    emit(env: Environment) {
+        this.left.emit(env)
         emit(`  push {r0, ip}`)
-        this.right.emit()
+        this.right.emit(env)
         emit(`  pop {r1, ip}`)
         emit(`  udiv r0, r0, r1`)
     }
@@ -187,17 +191,17 @@ class DivNode implements AST {
 class CallNode implements AST {
     constructor(public callee: string, public args: Array<AST>) { }
 
-    emit() {
+    emit(env: Environment) {
         let n_args = this.args.length
         if (n_args === 0) {
             emit(`  bl ${this.callee}`)
         } else if (n_args === 1) {
-            this.args[0].emit()
+            this.args[0].emit(env)
             emit(`  bl ${this.callee}`)
         } else if (n_args >= 2 && n_args <= 4) {
             emit(`  sub sp, sp, #16`)
             this.args.forEach((arg, i) => {
-                arg.emit()
+                arg.emit(env)
                 emit(`  str r0, [sp, #${4 * i}]`)
             })
             emit(`  pop {r0, r1, r2, r3}`)
@@ -219,7 +223,7 @@ class CallNode implements AST {
 class ReturnNode implements AST {
     constructor(public term: AST) { }
 
-    emit() {
+    emit(env: Environment) {
         throw Error("Not implemented yet");
     }
 
@@ -233,8 +237,8 @@ class ReturnNode implements AST {
 class BlockNode implements AST {
     constructor(public statements: Array<AST>) { }
 
-    emit() {
-        this.statements.forEach(stm => stm.emit())
+    emit(env: Environment) {
+        this.statements.forEach(stm => stm.emit(env))
     }
 
     equals(node: AST): boolean {
@@ -250,16 +254,16 @@ class IfNode implements AST {
         public consequence: AST,
         public alternative: AST) { }
 
-    emit() {
+    emit(env: Environment) {
         let ifFalseLabel = new Label()
         let endIfLabel = new Label()
-        this.conditional.emit()
+        this.conditional.emit(env)
         emit(`  cmp r0, #0`)
         emit(`  beq ${ifFalseLabel}`)
-        this.consequence.emit()
+        this.consequence.emit(env)
         emit(`  b ${endIfLabel}`)
         emit(`${ifFalseLabel}:`)
-        this.alternative.emit()
+        this.alternative.emit(env)
         emit(`${endIfLabel}:`)
     }
 
@@ -277,7 +281,7 @@ class FunctionNode implements AST {
         public parameters: Array<string>,
         public body: AST) { }
 
-    emit() {
+    emit(env: Environment) {
         throw Error("Not implemented yet");
     }
 
@@ -295,7 +299,7 @@ class FunctionNode implements AST {
 class VarNode implements AST {
     constructor(public name: string, public value: AST) { }
 
-    emit() {
+    emit(env: Environment) {
         throw Error("Not implemented yet");
     }
 
@@ -310,7 +314,7 @@ class VarNode implements AST {
 class AssignNode implements AST {
     constructor(public name: string, public value: AST) { }
 
-    emit() {
+    emit(env: Environment) {
         throw Error("Not implemented yet");
     }
 
@@ -325,7 +329,7 @@ class AssignNode implements AST {
 class WhileNode implements AST {
     constructor(public conditional: AST, public body: AST) { }
 
-    emit() {
+    emit(env: Environment) {
         throw Error("Not implemented yet");
     }
 
@@ -342,12 +346,12 @@ class WhileNode implements AST {
 class Main implements AST {
     constructor(public statements: Array<AST>) { }
 
-    emit() {
+    emit(env: Environment) {
         emit(`.global main`)
         emit(`main:`)
         emit(`  push {fp, lr}`)
         this.statements.forEach(stm =>
-            stm.emit()
+            stm.emit(env)
         )
         emit(`  mov r0, #0`)
         emit(`  pop {fp, pc}`)
@@ -364,8 +368,8 @@ class Main implements AST {
 class Assert implements AST {
     constructor(public condition: AST) { }
 
-    emit() {
-        this.condition.emit()
+    emit(env: Environment) {
+        this.condition.emit(env)
         emit(`  cmp r0, #1`)
         emit(`  moveq r0, #'.'`)
         emit(`  movne r0, #'F'`)
