@@ -62,9 +62,7 @@ let call: Parser<AST.AST> = ID.bind(callee =>
         args.bind(args =>
             RIGHT_PAREN.and(
                 Parser.constant(
-                    callee === "assert"
-                        ? new AST.Assert(args[0])
-                        : new AST.CallNode(callee, args)))
+                    new AST.CallNode(callee, args)))
         )
     )
 )
@@ -162,9 +160,7 @@ let functionStatement: Parser<AST.AST> =
         LEFT_PAREN.and(parameters).bind(parameters =>
             RIGHT_PAREN.and(blockStatement).bind(block =>
                 Parser.constant(
-                    name === "main"
-                        ? new AST.Main((block as AST.BlockNode).statements)
-                        : new AST.FunctionNode(name, parameters, block))
+                    new AST.FunctionNode(name, parameters, block))
             )
         )
     )
@@ -226,36 +222,87 @@ let expected = new AST.BlockNode([
 console.assert(got.equals(expected))
 
 // Test main & assert
+// parser.parseStringToCompletion(`
+//     function assert(x) {
+//         if (x) {
+//             putchar(46);
+//         } else {
+//             putchar(70);
+//         }
+//     }
+
+//     function assert1234(a, b, c, d) {
+//         assert(a == 1);
+//         assert(b == 2);
+//         assert(c == 3);
+//         assert(d == 4);
+//     }
+
+//     function main() {
+//         assert(1);
+//         assert(0);
+//         assert(!0);
+//         assert(42 == 4 + 2 * (12 - 2) + 3 * (5 + 1));
+//         {   /* Testing a Block */
+//             assert(0);
+//             assert(1);
+//         }
+//         putchar(97);
+//         putchar('A');
+//         putchar('R');
+//         putchar('M');
+//         assert(rand() != 42);
+
+//         if (1) {
+//             putchar('I');
+//         } else {
+//             putchar('E');
+//         }
+
+//         if (0) {
+//             putchar('I');
+//         } else {
+//             putchar('E');
+//         }
+//         putchar('\n');
+//         putchar('\t');
+//         putchar('H');
+//         putchar('\n');
+
+//         assert1234(1, 2, 3, 4);
+//     }
+// `).emit(AST.Environment.empty())
+
+// Test return & recursion
 parser.parseStringToCompletion(`
-    function main() {
-        assert(1);
-        assert(0);
-        assert(!0);
-        assert(42 == 4 + 2 * (12 - 2) + 3 * (5 + 1));
-        {   /* Testing a Block */
-            assert(0);
-            assert(1);
-        }
-        putchar(97);
-        putchar('A');
-        putchar('R');
-        putchar('M');
-        assert(rand() != 42);
-
-        if (1) {
-            putchar('I');
+    function assert(x) {
+        if (x) {
+            putchar(46);
         } else {
-            putchar('E');
+            putchar(70);
         }
-
-        if (0) {
-            putchar('I');
-        } else {
-            putchar('E');
-        }
-        putchar('\n');
-        putchar('\t');
-        putchar('H');
-        putchar('\n');
     }
-`).emit()
+
+    function factorial(n) {
+        if (n == 0) {
+            return 1;
+        } else {
+            return n * factorial(n - 1);
+        }
+    }
+
+    function main() {
+        assert(1       == factorial(1));
+        assert(1       == factorial(1));
+        assert(2       == factorial(2));
+        assert(6       == factorial(3));
+        assert(24      == factorial(4));
+        assert(120     == factorial(5));
+        assert(720     == factorial(6));
+        assert(5040    == factorial(7));
+        assert(40320   == factorial(8));
+        assert(362880  == factorial(9));
+        assert(3628800 == factorial(10));
+        return 0;
+    }
+`).emit(AST.Environment.empty())
