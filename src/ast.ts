@@ -1,6 +1,8 @@
 let emit = console.log
 
 class Environment {
+    static empty = () => new Environment(new Map())
+
     constructor(public locals: Map<string, number>) { }
 }
 
@@ -43,7 +45,12 @@ class IdNode implements AST {
     constructor(public value: string) { }
 
     emit(env: Environment) {
-        throw Error("Not implemented yet");
+        let offset = env.locals.get(this.value)
+        if (offset) {
+            emit(`  ldr r0, [fp, #${offset}]`)
+        } else {
+            throw Error(`Undefined variable: ${this.value}`)
+        }
     }
 
     equals(node: AST): boolean {
@@ -224,7 +231,9 @@ class ReturnNode implements AST {
     constructor(public term: AST) { }
 
     emit(env: Environment) {
-        throw Error("Not implemented yet");
+        this.term.emit(env)
+        emit(`  mov sp, fp`)
+        emit(`  pop {fp, pc}`)
     }
 
     equals(node: AST): boolean {
@@ -281,8 +290,36 @@ class FunctionNode implements AST {
         public parameters: Array<string>,
         public body: AST) { }
 
-    emit(env: Environment) {
-        throw Error("Not implemented yet");
+    emit(_: Environment) {
+        if (this.parameters.length > 4)
+            throw Error("More than 4 params is not supported")
+        emit(``)
+        emit(`.global ${this.name}`)
+        emit(`${this.name}:`)
+        this.emitPrologue()
+        const env = this.setUpEnvironment()
+        this.body.emit(env)
+        this.emitEpilogue()
+    }
+
+    emitPrologue() {
+        emit(`  push {fp, lr}`)
+        emit(`  mov fp, sp`)
+        emit(`  push {r0, r1, r2, r3}`)
+    }
+
+    emitEpilogue() {
+        emit(`  mov sp, fp`)
+        emit(`  mov r0, #0`)
+        emit(`  pop {fp, pc}`)
+    }
+
+    setUpEnvironment() {
+        let locals = new Map()
+        this.parameters.forEach((p, i) => {
+            locals.set(p, 4 * i - 16)
+        })
+        return new Environment(locals)
     }
 
     equals(node: AST): boolean {
@@ -340,48 +377,6 @@ class WhileNode implements AST {
     }
 }
 
-/* Nodes of testing */
-
-// Main function node
-class Main implements AST {
-    constructor(public statements: Array<AST>) { }
-
-    emit(env: Environment) {
-        emit(`.global main`)
-        emit(`main:`)
-        emit(`  push {fp, lr}`)
-        this.statements.forEach(stm =>
-            stm.emit(env)
-        )
-        emit(`  mov r0, #0`)
-        emit(`  pop {fp, pc}`)
-    }
-
-    equals(node: AST): boolean {
-        return node instanceof Main
-            && this.statements.length === node.statements.length
-            && this.statements.every((stm, i) => stm.equals(node.statements[i]))
-    }
-}
-
-// Assert node
-class Assert implements AST {
-    constructor(public condition: AST) { }
-
-    emit(env: Environment) {
-        this.condition.emit(env)
-        emit(`  cmp r0, #1`)
-        emit(`  moveq r0, #'.'`)
-        emit(`  movne r0, #'F'`)
-        emit(`  bl putchar`)
-    }
-
-    equals(node: AST): boolean {
-        return node instanceof Assert
-            && this.condition.equals(node.condition)
-    }
-}
-
 export {
     AST,
     NumberNode,
@@ -402,6 +397,5 @@ export {
     VarNode,
     FunctionNode,
 
-    Main,
-    Assert,
+    Environment,
 }
