@@ -1,9 +1,10 @@
 let emit = console.log
 
 class Environment {
-    static empty = () => new Environment(new Map())
+    static empty = () => new Environment(new Map(), -20)
 
-    constructor(public locals: Map<string, number>) { }
+    constructor(public locals: Map<string, number>,
+        public nextLocalOffset: number) { }
 }
 
 class Label {
@@ -319,7 +320,7 @@ class FunctionNode implements AST {
         this.parameters.forEach((p, i) => {
             locals.set(p, 4 * i - 16)
         })
-        return new Environment(locals)
+        return new Environment(locals, -20)
     }
 
     equals(node: AST): boolean {
@@ -337,7 +338,10 @@ class VarNode implements AST {
     constructor(public name: string, public value: AST) { }
 
     emit(env: Environment) {
-        throw Error("Not implemented yet");
+        this.value.emit(env)
+        emit(`  push {r0, ip}`)
+        env.locals.set(this.name, env.nextLocalOffset - 4)
+        env.nextLocalOffset -= 8
     }
 
     equals(node: AST): boolean {
@@ -352,7 +356,13 @@ class AssignNode implements AST {
     constructor(public name: string, public value: AST) { }
 
     emit(env: Environment) {
-        throw Error("Not implemented yet");
+        this.value.emit(env)
+        let offset = env.locals.get(this.name)
+        if (offset) {
+            emit(`  str r0, [fp, #${offset}]`)
+        } else {
+            throw Error(`Undefined variable: ${this.name}`)
+        }
     }
 
     equals(node: AST): boolean {

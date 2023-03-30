@@ -222,56 +222,66 @@ let expected = new AST.BlockNode([
 console.assert(got.equals(expected))
 
 // Test main & assert
-// parser.parseStringToCompletion(`
-//     function assert(x) {
-//         if (x) {
-//             putchar(46);
-//         } else {
-//             putchar(70);
-//         }
-//     }
+parser.parseStringToCompletion(`
+    function assert(x) {
+        if (x) {
+            putchar(46);
+        } else {
+            putchar(70);
+        }
+    }
 
-//     function assert1234(a, b, c, d) {
-//         assert(a == 1);
-//         assert(b == 2);
-//         assert(c == 3);
-//         assert(d == 4);
-//     }
+    function assert1234(a, b, c, d) {
+        assert(a == 1);
+        assert(b == 2);
+        assert(c == 3);
+        assert(d == 4);
+    }
 
-//     function main() {
-//         assert(1);
-//         assert(0);
-//         assert(!0);
-//         assert(42 == 4 + 2 * (12 - 2) + 3 * (5 + 1));
-//         {   /* Testing a Block */
-//             assert(0);
-//             assert(1);
-//         }
-//         putchar(97);
-//         putchar('A');
-//         putchar('R');
-//         putchar('M');
-//         assert(rand() != 42);
+    function main() {
+        assert(1);
+        assert(0);
+        assert(!0);
+        assert(42 == 4 + 2 * (12 - 2) + 3 * (5 + 1));
+        {   /* Testing a Block */
+            assert(0);
+            assert(1);
+        }
+        putchar(97);
+        putchar('A');
+        putchar('R');
+        putchar('M');
+        assert(rand() != 42);
 
-//         if (1) {
-//             putchar('I');
-//         } else {
-//             putchar('E');
-//         }
+        if (1) {
+            putchar('I');
+        } else {
+            putchar('E');
+        }
 
-//         if (0) {
-//             putchar('I');
-//         } else {
-//             putchar('E');
-//         }
-//         putchar('\n');
-//         putchar('\t');
-//         putchar('H');
-//         putchar('\n');
+        if (0) {
+            putchar('I');
+        } else {
+            putchar('E');
+        }
+        putchar('\n');
+        putchar('\t');
+        putchar('H');
+        putchar('\n');
 
-//         assert1234(1, 2, 3, 4);
-//     }
-// `).emit(AST.Environment.empty())
+        assert1234(1, 2, 3, 4);
+
+        var x = 4 + 2 * (12 - 2);
+        var y = 3 * (5 + 1);
+        var z = x + y;
+        assert(z == 42);
+
+        var a = 1;
+        assert(a == 1);
+        a = 0;
+        assert(a == 0);
+    }
+`).emit(AST.Environment.empty())
 
 // Test return & recursion
 parser.parseStringToCompletion(`
@@ -305,4 +315,4 @@ parser.parseStringToCompletion(`
         assert(3628800 == factorial(10));
         return 0;
     }
-`).emit(AST.Environment.empty())
+`)
