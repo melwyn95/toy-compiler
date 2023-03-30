@@ -377,7 +377,16 @@ class WhileNode implements AST {
     constructor(public conditional: AST, public body: AST) { }
 
     emit(env: Environment) {
-        throw Error("Not implemented yet");
+        let loopStart = new Label()
+        let loopEnd = new Label()
+
+        emit(`${loopStart}:`)
+        this.conditional.emit(env)
+        emit(`  cmp r0, #0`)
+        emit(`  beq ${loopEnd}`)
+        this.body.emit(env)
+        emit(`  b ${loopStart}`)
+        emit(`${loopEnd}:`)
     }
 
     equals(node: AST): boolean {

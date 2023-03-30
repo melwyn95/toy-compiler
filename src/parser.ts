@@ -280,8 +280,14 @@ parser.parseStringToCompletion(`
         assert(a == 1);
         a = 0;
         assert(a == 0);
+
+        var i = 0;
+        while(i != 3) {
+            i = i + 1;
+        }
+        assert(i == 3);
     }
-`).emit(AST.Environment.empty())
+`)
 
 // Test return & recursion
 parser.parseStringToCompletion(`
@@ -316,3 +322,38 @@ parser.parseStringToCompletion(`
         return 0;
     }
 `)
+
+// Test assignment & while loop
+parser.parseStringToCompletion(`
+    function assert(x) {
+        if (x) {
+            putchar(46);
+        } else {
+            putchar(70);
+        }
+    }
+
+    function factorial(n) {
+        var result = 1;
+        while(n != 0) {
+            result = result * n;
+            n = n - 1;
+        }
+        return result;
+    }
+
+    function main() {
+        assert(1       == factorial(1));
+        assert(1       == factorial(1));
+        assert(2       == factorial(2));
+        assert(6       == factorial(3));
+        assert(24      == factorial(4));
+        assert(120     == factorial(5));
+        assert(720     == factorial(6));
+        assert(5040    == factorial(7));
+        assert(40320   == factorial(8));
+        assert(362880  == factorial(9));
+        assert(3628800 == factorial(10));
+        return 0;
+    }
+`).emit(AST.Environment.empty())
