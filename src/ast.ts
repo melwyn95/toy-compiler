@@ -396,6 +396,50 @@ class WhileNode implements AST {
     }
 }
 
+
+// Boolean Node
+class Boolean implements AST {
+    constructor(public value: boolean) { }
+
+    emit(_: Environment) {
+        if (this.value) {
+            emit(`  mov r0, #1`)
+        } else {
+            emit(`  mov r0, #0`)
+        }
+    }
+    equals(node: AST): boolean {
+        return node instanceof Boolean
+            && node.value === this.value
+    }
+}
+
+// Undefined Node
+class Undefined implements AST {
+    constructor() { }
+
+    emit(_: Environment) {
+        emit(`  mov r0, #0`)
+    }
+
+    equals(node: AST): boolean {
+        return node instanceof Undefined
+    }
+}
+
+// Null Node
+class Null implements AST {
+    constructor() { }
+
+    emit(_: Environment) {
+        emit(`  mov r0, #0`)
+    }
+
+    equals(node: AST): boolean {
+        return node instanceof Null
+    }
+}
+
 export {
     AST,
     NumberNode,
@@ -415,6 +459,10 @@ export {
     AssignNode,
     VarNode,
     FunctionNode,
+
+    Boolean,
+    Undefined,
+    Null,
 
     Environment,
 }

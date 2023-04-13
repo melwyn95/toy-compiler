@@ -34,6 +34,18 @@ let NUMBER =
 let CHAR_LITERAL =
     token(/'.'|'[\n\r\t]'/y).map(char => new AST.NumberNode(char.charCodeAt(1)))
 
+let UNDEFINED =
+    token(/undefined\b/y).map(_ => new AST.Undefined())
+
+let NULL =
+    token(/null\b/y).map(_ => new AST.Null())
+
+let TRUE =
+    token(/true\b/y).map(_ => new AST.Boolean(true))
+let FALSE =
+    token(/false\b/y).map(_ => new AST.Boolean(false))
+let boolean: Parser<AST.AST> = TRUE.or(FALSE)
+
 let ID = token(/[a-zA-Z_][a-zA-Z0-9_]*/y)
 let id = ID.map(x => new AST.IdNode(x))
 
@@ -57,6 +69,14 @@ let args = expression.bind(arg =>
     )
 ).or(Parser.constant([]))
 
+let scalar: Parser<AST.AST> =
+    boolean
+        .or(UNDEFINED)
+        .or(NULL)
+        .or(id)
+        .or(NUMBER)
+        .or(CHAR_LITERAL)
+
 let call: Parser<AST.AST> = ID.bind(callee =>
     LEFT_PAREN.and(
         args.bind(args =>
@@ -69,9 +89,7 @@ let call: Parser<AST.AST> = ID.bind(callee =>
 
 let atom: Parser<AST.AST> =
     call
-        .or(id)
-        .or(NUMBER)
-        .or(CHAR_LITERAL)
+        .or(scalar)
         .or(
             LEFT_PAREN
                 .and(expression)
@@ -354,6 +372,25 @@ parser.parseStringToCompletion(`
         assert(40320   == factorial(8));
         assert(362880  == factorial(9));
         assert(3628800 == factorial(10));
+        return 0;
+    }
+`)
+
+// Extended baseline languge
+parser.parseStringToCompletion(`
+    function assert(x) {
+        if (x) {
+            putchar(46);
+        } else {
+            putchar(70);
+        }
+    }
+
+    function main() {
+        assert(true);
+        assert(false);
+        assert(!undefined);
+        assert(null);
         return 0;
     }
 `).emit(AST.Environment.empty())
