@@ -222,7 +222,8 @@ class CallNode implements AST {
 
     equals(node: AST): boolean {
         return node instanceof CallNode
-            && this.callee == node.callee
+            && this.callee === node.callee
+            && this.args.length === node.args.length
             && this.args.every((arg, i) => arg.equals(node.args[i]))
     }
 }
@@ -440,6 +441,73 @@ class Null implements AST {
     }
 }
 
+// Array Literal
+class ArrayLiteral implements AST {
+    constructor(public elements: Array<AST>) { }
+
+    emit(env: Environment): void {
+        let length = this.elements.length
+        emit(`  ldr r0, =${4 * (length + 1)}`)
+        emit(`  bl malloc`)
+        emit(`  push {r4, ip}`)
+        emit(`  mov r4, r0`)
+        emit(`  ldr r0, =${length}`)
+        emit(`  str r0, [r4]`)
+        this.elements.forEach((elt, i) => {
+            elt.emit(env)
+            emit(`  str r0, [r4, #${4 * (i + 1)}]`)
+        })
+        emit(`  mov r0, r4`)
+        emit(`  pop {r4, ip}`)
+    }
+
+    equals(node: AST): boolean {
+        return node instanceof ArrayLiteral
+            && this.elements.length === node.elements.length
+            && this.elements.every((elt, i) => elt.equals(node.elements[i]))
+    }
+}
+
+// Array Lookup
+class ArrayLookup implements AST {
+    constructor(public array: AST, public index: AST) { }
+
+    emit(env: Environment): void {
+        this.array.emit(env)
+        emit(`  push {r0, ip}`)
+        this.index.emit(env)
+        emit(`  pop {r1, ip}`)
+        emit(`  ldr r2, [r1]`)
+        emit(`  cmp r0, r2`)
+        emit(`  movhs r0, #0`)
+        emit(`  addlo r1, r1, #4`)
+        emit(`  lsllo r0, r0, #2`)
+        emit(`  ldrlo r0, [r1, r0]`)
+    }
+
+    equals(node: AST): boolean {
+        return node instanceof ArrayLookup
+            && this.array.equals(node.array)
+            && this.index.equals(node.index)
+    }
+}
+
+// Array Length
+class Length implements AST {
+    constructor(public array: AST) { }
+
+    emit(env: Environment): void {
+        this.array.emit(env)
+        emit(`  ldr r0, [r0, #0]`)
+    }
+    
+    equals(node: AST): boolean {
+        return node instanceof Length
+            && this.array.equals(node.array)
+    }
+
+}
+
 export {
     AST,
     NumberNode,
@@ -463,6 +531,10 @@ export {
     Boolean,
     Undefined,
     Null,
+
+    ArrayLiteral,
+    ArrayLookup,
+    Length,
 
     Environment,
 }

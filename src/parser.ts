@@ -27,6 +27,8 @@ let LEFT_PAREN = token(/[(]/y)
 let RIGHT_PAREN = token(/[)]/y)
 let LEFT_BRACE = token(/[{]/y)
 let RIGHT_BRACE = token(/[}]/y)
+let LEFT_BRACKET = token(/[\[]/y)
+let RIGHT_BRACKET = token(/[\]]/y)
 
 let NUMBER =
     token(/[0-9]+/y).map(digits => new AST.NumberNode(parseInt(digits)))
@@ -82,13 +84,37 @@ let call: Parser<AST.AST> = ID.bind(callee =>
         args.bind(args =>
             RIGHT_PAREN.and(
                 Parser.constant(
-                    new AST.CallNode(callee, args)))
+                    callee === "length"
+                        ? new AST.Length(args[0])
+                        : new AST.CallNode(callee, args)))
+        )
+    )
+)
+
+let arrayLiteral: Parser<AST.AST> = LEFT_BRACKET.and(args).bind(args =>
+    RIGHT_BRACKET.and(
+        Parser.constant(
+            new AST.ArrayLiteral(args)
+        )
+    )
+)
+
+let arrayLookup: Parser<AST.AST> = ID.bind(array =>
+    LEFT_BRACKET.and(
+        expression.bind(index =>
+            RIGHT_BRACKET.and(
+                Parser.constant(
+                    new AST.ArrayLookup(new AST.IdNode(array), index)
+                )
+            )
         )
     )
 )
 
 let atom: Parser<AST.AST> =
     call
+        .or(arrayLiteral)
+        .or(arrayLookup)
         .or(scalar)
         .or(
             LEFT_PAREN
@@ -391,6 +417,27 @@ parser.parseStringToCompletion(`
         assert(false);
         assert(!undefined);
         assert(null);
+        return 0;
+    }
+`)
+
+// Extended baseline languge with Arrays
+parser.parseStringToCompletion(`
+    function assert(x) {
+        if (x) {
+            putchar(46);
+        } else {
+            putchar(70);
+        }
+    }
+
+    function main() {
+        var a = [10, 20, 30];
+        assert(a[0] == 10);
+        assert(a[1] == 20);
+        assert(a[2] == 30);
+        assert(a[3] == undefined); // Bounds checking.
+        assert(length(a) == 3);
         return 0;
     }
 `).emit(AST.Environment.empty())
