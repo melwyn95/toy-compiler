@@ -1,4 +1,5 @@
 import * as AST from "./ast"
+import { CodeGenerator } from "./code-generator"
 import { Parser } from "./parser-combinators"
 
 // TODO: read about commit messages feat:, fix:, refactor:, etc.    
@@ -453,4 +454,4 @@ parser.parseStringToCompletion(`
         assert(sum(a) == 100);
         return 0;
     }
-`).emit(AST.Environment.empty())
+`).visit(CodeGenerator.empty())

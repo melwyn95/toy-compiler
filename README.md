@@ -5,6 +5,8 @@ Working though the book ["Compiling to Assembly from Scratch"](https://keleshev.
 
 ### TODO(s)
 
+- [ ] Proper test bench set-up
+
 - [ ] Add for-loops
 - [ ] Add operation-assignment operator (+=, -=, ...)
 - [ ] Add comparison operators (>, <, >=, <=)

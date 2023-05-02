@@ -1,10 +1,30 @@
-let emit = console.log
+interface Visitor<T> {
+    visitNumberNode(node: NumberNode): T;
+    visitIdNode(node: IdNode): T;
+    visitNotNode(node: NotNode): T;
+    visitIfNode(node: IfNode): T;
+    visitBlockNode(node: BlockNode): T;
+    visitReturnNode(node: ReturnNode): T;
+    visitCallNode(node: CallNode): T;
+    visitDivNode(node: DivNode): T;
+    visitMulNode(node: MulNode): T;
+    visitSubNode(node: SubNode): T;
+    visitAddNode(node: AddNode): T;
+    visitEqualsNode(node: EqualsNode): T;
+    visitNotEqualsNode(node: NotEqualsNode): T;
+    visitWhileNode(node: WhileNode): T;
+    visitAssignNode(node: AssignNode): T;
+    visitVarNode(node: VarNode): T;
+    visitFunctionNode(node: FunctionNode): T;
 
-class Environment {
-    static empty = () => new Environment(new Map(), -20)
+    visitBoolean(node: Boolean): T;
+    visitUndefined(node: Undefined): T;
+    visitNull(node: Null): T;
 
-    constructor(public locals: Map<string, number>,
-        public nextLocalOffset: number) { }
+    visitArrayLiteral(node: ArrayLiteral): T;
+    visitArrayLookup(node: ArrayLookup): T;
+    visitLength(node: Length): T;
+
 }
 
 class Label {
@@ -21,7 +41,7 @@ class Label {
 }
 
 interface AST {
-    emit(env: Environment): void;
+    visit<T>(v: Visitor<T>): T;
     equals(node: AST): boolean;
 }
 
@@ -31,8 +51,8 @@ interface AST {
 class NumberNode implements AST {
     constructor(public value: number) { }
 
-    emit() {
-        emit(`  ldr r0, =${this.value}`)
+    visit<T>(v: Visitor<T>): T {
+        return v.visitNumberNode(this)
     }
 
     equals(node: AST): boolean {
@@ -45,13 +65,8 @@ class NumberNode implements AST {
 class IdNode implements AST {
     constructor(public value: string) { }
 
-    emit(env: Environment) {
-        let offset = env.locals.get(this.value)
-        if (offset) {
-            emit(`  ldr r0, [fp, #${offset}]`)
-        } else {
-            throw Error(`Undefined variable: ${this.value}`)
-        }
+    visit<T>(v: Visitor<T>): T {
+        return v.visitIdNode(this)
     }
 
     equals(node: AST): boolean {
@@ -64,11 +79,8 @@ class IdNode implements AST {
 class NotNode implements AST {
     constructor(public term: AST) { }
 
-    emit(env: Environment) {
-        this.term.emit(env)
-        emit(`  cmp r0, #0`)
-        emit(`  moveq r0, #1`)
-        emit(`  movne r0, #0`)
+    visit<T>(v: Visitor<T>): T {
+        return v.visitNotNode(this)
     }
 
     equals(node: AST): boolean {
@@ -81,14 +93,8 @@ class NotNode implements AST {
 class EqualsNode implements AST {
     constructor(public left: AST, public right: AST) { }
 
-    emit(env: Environment) {
-        this.left.emit(env)
-        emit(`  push {r0, ip}`)
-        this.right.emit(env)
-        emit(`  pop {r1, ip}`)
-        emit(`  cmp r0, r1`)
-        emit(`  moveq r0, #1`)
-        emit(`  movne r0, #0`)
+    visit<T>(v: Visitor<T>): T {
+        return v.visitEqualsNode(this)
     }
 
     equals(node: AST): boolean {
@@ -102,14 +108,8 @@ class EqualsNode implements AST {
 class NotEqualsNode implements AST {
     constructor(public left: AST, public right: AST) { }
 
-    emit(env: Environment) {
-        this.left.emit(env)
-        emit(`  push {r0, ip}`)
-        this.right.emit(env)
-        emit(`  pop {r1, ip}`)
-        emit(`  cmp r0, r1`)
-        emit(`  moveq r0, #0`)
-        emit(`  movne r0, #1`)
+    visit<T>(v: Visitor<T>): T {
+        return v.visitNotEqualsNode(this)
     }
 
     equals(node: AST): boolean {
@@ -123,12 +123,8 @@ class NotEqualsNode implements AST {
 class AddNode implements AST {
     constructor(public left: AST, public right: AST) { }
 
-    emit(env: Environment) {
-        this.left.emit(env)
-        emit(`  push {r0, ip}`)
-        this.right.emit(env)
-        emit(`  pop {r1, ip}`)
-        emit(`  add r0, r0, r1`)
+    visit<T>(v: Visitor<T>): T {
+        return v.visitAddNode(this)
     }
 
     equals(node: AST): boolean {
@@ -142,12 +138,8 @@ class AddNode implements AST {
 class SubNode implements AST {
     constructor(public left: AST, public right: AST) { }
 
-    emit(env: Environment) {
-        this.left.emit(env)
-        emit(`  push {r0, ip}`)
-        this.right.emit(env)
-        emit(`  pop {r1, ip}`)
-        emit(`  sub r0, r1, r0`)
+    visit<T>(v: Visitor<T>): T {
+        return v.visitSubNode(this)
     }
 
     equals(node: AST): boolean {
@@ -161,12 +153,8 @@ class SubNode implements AST {
 class MulNode implements AST {
     constructor(public left: AST, public right: AST) { }
 
-    emit(env: Environment) {
-        this.left.emit(env)
-        emit(`  push {r0, ip}`)
-        this.right.emit(env)
-        emit(`  pop {r1, ip}`)
-        emit(`  mul r0, r0, r1`)
+    visit<T>(v: Visitor<T>): T {
+        return v.visitMulNode(this)
     }
 
     equals(node: AST): boolean {
@@ -180,12 +168,8 @@ class MulNode implements AST {
 class DivNode implements AST {
     constructor(public left: AST, public right: AST) { }
 
-    emit(env: Environment) {
-        this.left.emit(env)
-        emit(`  push {r0, ip}`)
-        this.right.emit(env)
-        emit(`  pop {r1, ip}`)
-        emit(`  udiv r0, r0, r1`)
+    visit<T>(v: Visitor<T>): T {
+        return v.visitDivNode(this)
     }
 
     equals(node: AST): boolean {
@@ -199,25 +183,8 @@ class DivNode implements AST {
 class CallNode implements AST {
     constructor(public callee: string, public args: Array<AST>) { }
 
-    emit(env: Environment) {
-        let n_args = this.args.length
-        if (n_args === 0) {
-            emit(`  bl ${this.callee}`)
-        } else if (n_args === 1) {
-            this.args[0].emit(env)
-            emit(`  bl ${this.callee}`)
-        } else if (n_args >= 2 && n_args <= 4) {
-            emit(`  sub sp, sp, #16`)
-            this.args.forEach((arg, i) => {
-                arg.emit(env)
-                emit(`  str r0, [sp, #${4 * i}]`)
-            })
-            emit(`  pop {r0, r1, r2, r3}`)
-            emit(`  bl ${this.callee}`)
-        } else {
-            throw Error(
-                "TODO: Add support for more than 4 args in function call")
-        }
+    visit<T>(v: Visitor<T>): T {
+        return v.visitCallNode(this)
     }
 
     equals(node: AST): boolean {
@@ -232,10 +199,8 @@ class CallNode implements AST {
 class ReturnNode implements AST {
     constructor(public term: AST) { }
 
-    emit(env: Environment) {
-        this.term.emit(env)
-        emit(`  mov sp, fp`)
-        emit(`  pop {fp, pc}`)
+    visit<T>(v: Visitor<T>): T {
+        return v.visitReturnNode(this)
     }
 
     equals(node: AST): boolean {
@@ -248,8 +213,8 @@ class ReturnNode implements AST {
 class BlockNode implements AST {
     constructor(public statements: Array<AST>) { }
 
-    emit(env: Environment) {
-        this.statements.forEach(stm => stm.emit(env))
+    visit<T>(v: Visitor<T>): T {
+        return v.visitBlockNode(this)
     }
 
     equals(node: AST): boolean {
@@ -264,18 +229,9 @@ class IfNode implements AST {
     constructor(public conditional: AST,
         public consequence: AST,
         public alternative: AST) { }
-
-    emit(env: Environment) {
-        let ifFalseLabel = new Label()
-        let endIfLabel = new Label()
-        this.conditional.emit(env)
-        emit(`  cmp r0, #0`)
-        emit(`  beq ${ifFalseLabel}`)
-        this.consequence.emit(env)
-        emit(`  b ${endIfLabel}`)
-        emit(`${ifFalseLabel}:`)
-        this.alternative.emit(env)
-        emit(`${endIfLabel}:`)
+    
+    visit<T>(v: Visitor<T>): T {
+        return v.visitIfNode(this)
     }
 
     equals(node: AST): boolean {
@@ -292,36 +248,8 @@ class FunctionNode implements AST {
         public parameters: Array<string>,
         public body: AST) { }
 
-    emit(_: Environment) {
-        if (this.parameters.length > 4)
-            throw Error("More than 4 params is not supported")
-        emit(``)
-        emit(`.global ${this.name}`)
-        emit(`${this.name}:`)
-        this.emitPrologue()
-        const env = this.setUpEnvironment()
-        this.body.emit(env)
-        this.emitEpilogue()
-    }
-
-    emitPrologue() {
-        emit(`  push {fp, lr}`)
-        emit(`  mov fp, sp`)
-        emit(`  push {r0, r1, r2, r3}`)
-    }
-
-    emitEpilogue() {
-        emit(`  mov sp, fp`)
-        emit(`  mov r0, #0`)
-        emit(`  pop {fp, pc}`)
-    }
-
-    setUpEnvironment() {
-        let locals = new Map()
-        this.parameters.forEach((p, i) => {
-            locals.set(p, 4 * i - 16)
-        })
-        return new Environment(locals, -20)
+    visit<T>(v: Visitor<T>): T {
+        return v.visitFunctionNode(this)
     }
 
     equals(node: AST): boolean {
@@ -338,11 +266,8 @@ class FunctionNode implements AST {
 class VarNode implements AST {
     constructor(public name: string, public value: AST) { }
 
-    emit(env: Environment) {
-        this.value.emit(env)
-        emit(`  push {r0, ip}`)
-        env.locals.set(this.name, env.nextLocalOffset - 4)
-        env.nextLocalOffset -= 8
+    visit<T>(v: Visitor<T>): T {
+        return v.visitVarNode(this)
     }
 
     equals(node: AST): boolean {
@@ -356,14 +281,8 @@ class VarNode implements AST {
 class AssignNode implements AST {
     constructor(public name: string, public value: AST) { }
 
-    emit(env: Environment) {
-        this.value.emit(env)
-        let offset = env.locals.get(this.name)
-        if (offset) {
-            emit(`  str r0, [fp, #${offset}]`)
-        } else {
-            throw Error(`Undefined variable: ${this.name}`)
-        }
+    visit<T>(v: Visitor<T>): T {
+        return v.visitAssignNode(this)
     }
 
     equals(node: AST): boolean {
@@ -377,17 +296,8 @@ class AssignNode implements AST {
 class WhileNode implements AST {
     constructor(public conditional: AST, public body: AST) { }
 
-    emit(env: Environment) {
-        let loopStart = new Label()
-        let loopEnd = new Label()
-
-        emit(`${loopStart}:`)
-        this.conditional.emit(env)
-        emit(`  cmp r0, #0`)
-        emit(`  beq ${loopEnd}`)
-        this.body.emit(env)
-        emit(`  b ${loopStart}`)
-        emit(`${loopEnd}:`)
+    visit<T>(v: Visitor<T>): T {
+        return v.visitWhileNode(this)
     }
 
     equals(node: AST): boolean {
@@ -402,13 +312,10 @@ class WhileNode implements AST {
 class Boolean implements AST {
     constructor(public value: boolean) { }
 
-    emit(_: Environment) {
-        if (this.value) {
-            emit(`  mov r0, #1`)
-        } else {
-            emit(`  mov r0, #0`)
-        }
+    visit<T>(v: Visitor<T>): T {
+        return v.visitBoolean(this)
     }
+
     equals(node: AST): boolean {
         return node instanceof Boolean
             && node.value === this.value
@@ -419,8 +326,8 @@ class Boolean implements AST {
 class Undefined implements AST {
     constructor() { }
 
-    emit(_: Environment) {
-        emit(`  mov r0, #0`)
+    visit<T>(v: Visitor<T>): T {
+        return v.visitUndefined(this)
     }
 
     equals(node: AST): boolean {
@@ -431,9 +338,8 @@ class Undefined implements AST {
 // Null Node
 class Null implements AST {
     constructor() { }
-
-    emit(_: Environment) {
-        emit(`  mov r0, #0`)
+    visit<T>(v: Visitor<T>): T {
+        return v.visitNull(this)
     }
 
     equals(node: AST): boolean {
@@ -445,20 +351,8 @@ class Null implements AST {
 class ArrayLiteral implements AST {
     constructor(public elements: Array<AST>) { }
 
-    emit(env: Environment): void {
-        let length = this.elements.length
-        emit(`  ldr r0, =${4 * (length + 1)}`)
-        emit(`  bl malloc`)
-        emit(`  push {r4, ip}`)
-        emit(`  mov r4, r0`)
-        emit(`  ldr r0, =${length}`)
-        emit(`  str r0, [r4]`)
-        this.elements.forEach((elt, i) => {
-            elt.emit(env)
-            emit(`  str r0, [r4, #${4 * (i + 1)}]`)
-        })
-        emit(`  mov r0, r4`)
-        emit(`  pop {r4, ip}`)
+    visit<T>(v: Visitor<T>): T {
+        return v.visitArrayLiteral(this)
     }
 
     equals(node: AST): boolean {
@@ -472,17 +366,8 @@ class ArrayLiteral implements AST {
 class ArrayLookup implements AST {
     constructor(public array: AST, public index: AST) { }
 
-    emit(env: Environment): void {
-        this.array.emit(env)
-        emit(`  push {r0, ip}`)
-        this.index.emit(env)
-        emit(`  pop {r1, ip}`)
-        emit(`  ldr r2, [r1]`)
-        emit(`  cmp r0, r2`)
-        emit(`  movhs r0, #0`)
-        emit(`  addlo r1, r1, #4`)
-        emit(`  lsllo r0, r0, #2`)
-        emit(`  ldrlo r0, [r1, r0]`)
+    visit<T>(v: Visitor<T>): T {
+        return v.visitArrayLookup(this)
     }
 
     equals(node: AST): boolean {
@@ -496,11 +381,10 @@ class ArrayLookup implements AST {
 class Length implements AST {
     constructor(public array: AST) { }
 
-    emit(env: Environment): void {
-        this.array.emit(env)
-        emit(`  ldr r0, [r0, #0]`)
+    visit<T>(v: Visitor<T>): T {
+        return v.visitLength(this)
     }
-    
+
     equals(node: AST): boolean {
         return node instanceof Length
             && this.array.equals(node.array)
@@ -536,5 +420,6 @@ export {
     ArrayLookup,
     Length,
 
-    Environment,
+    Visitor,
+    Label,
 }
