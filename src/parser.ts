@@ -35,7 +35,12 @@ let NUMBER =
     token(/[0-9]+/y).map(digits => new AST.NumberNode(parseInt(digits)))
 
 let CHAR_LITERAL =
-    token(/'.'|'[\n\r\t]'/y).map(char => new AST.NumberNode(char.charCodeAt(1)))
+    token(/'.'|'\\n'|'\\t'/y).map(char =>
+        char === "'\\n'"
+            ? new AST.NumberNode(10)
+            : char === "'\\t'"
+                ? new AST.NumberNode(9)
+                : new AST.NumberNode(char.charCodeAt(1)))
 
 let UNDEFINED =
     token(/undefined\b/y).map(_ => new AST.Undefined())
