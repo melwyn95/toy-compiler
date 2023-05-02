@@ -431,13 +431,26 @@ parser.parseStringToCompletion(`
         }
     }
 
+    function sum(xs) {
+        var result = 0;
+        var i = 0;
+        var len = length(xs);
+        while(i != len) {
+            result = result + xs[i];
+            i = i + 1;
+        }
+        return result;
+    }
+
     function main() {
-        var a = [10, 20, 30];
+        var a = [10, 20, 30, 40];
         assert(a[0] == 10);
         assert(a[1] == 20);
         assert(a[2] == 30);
-        assert(a[3] == undefined); // Bounds checking.
-        assert(length(a) == 3);
+        assert(a[3] == 40);
+        assert(a[4] == undefined); // Bounds checking.
+        assert(length(a) == 4);
+        assert(sum(a) == 100);
         return 0;
     }
 `).emit(AST.Environment.empty())
