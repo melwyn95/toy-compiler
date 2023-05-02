@@ -6,6 +6,7 @@ Working though the book ["Compiling to Assembly from Scratch"](https://keleshev.
 ### TODO(s)
 
 - [ ] Proper test bench set-up
+- [ ] Proper CLI
 
 - [ ] Add for-loops
 - [ ] Add operation-assignment operator (+=, -=, ...)
