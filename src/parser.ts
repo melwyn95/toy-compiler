@@ -1,6 +1,8 @@
 import * as AST from "./ast"
+import * as T from "./types"
 import { CodeGenerator } from "./code-generator"
 import { Parser } from "./parser-combinators"
+import { NumberType } from "./types"
 
 // TODO: read about commit messages feat:, fix:, refactor:, etc.    
 
@@ -20,6 +22,7 @@ let ELSE = token(/else\b/y)
 let RETURN = token(/return\b/y)
 let VAR = token(/var\b/y)
 let WHILE = token(/while\b/y)
+let ARRAY = token(/Array\b/y)
 
 // Punctuations
 let COMMA = token(/[,]/y)
@@ -30,8 +33,11 @@ let LEFT_BRACE = token(/[{]/y)
 let RIGHT_BRACE = token(/[}]/y)
 let LEFT_BRACKET = token(/[\[]/y)
 let RIGHT_BRACKET = token(/[\]]/y)
+let LESS_THAN = token(/[<]/y)
+let GREATER_THAN = token(/[>]/y)
+let COLON = token(/[:]/y)
 
-let NUMBER =
+let INTEGER =
     token(/[0-9]+/y).map(digits => new AST.NumberNode(parseInt(digits)))
 
 let CHAR_LITERAL =
@@ -67,6 +73,25 @@ let STAR = token(/[*]/y).map(_ => AST.MulNode)
 let SLASH = token(/[/]/y).map(_ => AST.DivNode)
 let ASSIGN = token(/=/y).map(_ => AST.AssignNode)
 
+// Type
+let VOID = token(/void/y).map(_ => new T.VoidType())
+let BOOLEAN = token(/boolean/y).map(_ => new T.BooleanType())
+let NUMBER = token(/number/y).map(_ => new T.NumberType())
+
+let type: Parser<T.Type> = Parser.error("type parser used before definition")
+
+let arrayType: Parser<T.Type> =
+    ARRAY.and(LESS_THAN).and(type).bind(ty =>
+        GREATER_THAN.and(Parser.constant(new T.ArrayType(ty))))
+
+let atomType: Parser<T.Type> =
+    VOID.or(BOOLEAN).or(NUMBER).or(arrayType)
+
+type.parse = atomType.parse
+
+let optionalTypeAnnotation: Parser<T.Type> =
+    Parser.mayBe(COLON.and(type)).map(ty => ty ? ty : new T.NumberType())
+
 // Expression
 let expression: Parser<AST.AST> =
     Parser.error("expression parser used before definition")
@@ -82,7 +107,7 @@ let scalar: Parser<AST.AST> =
         .or(UNDEFINED)
         .or(NULL)
         .or(id)
-        .or(NUMBER)
+        .or(INTEGER)
         .or(CHAR_LITERAL)
 
 let call: Parser<AST.AST> = ID.bind(callee =>
@@ -198,9 +223,14 @@ let blockStatement: Parser<AST.AST> =
         RIGHT_BRACE.and(Parser.constant(new AST.BlockNode(statements)))
     )
 
-let parameters: Parser<Array<string>> =
-    ID.bind(param =>
-        Parser.zeroOrMore(COMMA.and(ID)).bind(params =>
+let parameter: Parser<[string, T.Type]> =
+    ID.bind(parameter =>
+        optionalTypeAnnotation.bind(type =>
+            Parser.constant([parameter, type])))
+
+let parameters: Parser<Array<[string, T.Type]>> =
+    parameter.bind(param =>
+        Parser.zeroOrMore(COMMA.and(parameter)).bind(params =>
             Parser.constant([param, ...params])
         )
     ).or(Parser.constant([]))
@@ -208,9 +238,16 @@ let parameters: Parser<Array<string>> =
 let functionStatement: Parser<AST.AST> =
     FUNCTION.and(ID).bind(name =>
         LEFT_PAREN.and(parameters).bind(parameters =>
-            RIGHT_PAREN.and(blockStatement).bind(block =>
-                Parser.constant(
-                    new AST.FunctionNode(name, parameters, block))
+            RIGHT_PAREN.and(optionalTypeAnnotation).bind(returnType =>
+                blockStatement.bind(block =>
+                    Parser.constant(
+                        new AST.FunctionNode(
+                            name,
+                            new T.FunctionType(new Map(parameters), returnType),
+                            block
+                        )
+                    )
+                )
             )
         )
     )

@@ -1,3 +1,5 @@
+import * as T from "./types"
+
 interface Visitor<T> {
     visitNumberNode(node: NumberNode): T;
     visitIdNode(node: IdNode): T;
@@ -229,7 +231,7 @@ class IfNode implements AST {
     constructor(public conditional: AST,
         public consequence: AST,
         public alternative: AST) { }
-    
+
     visit<T>(v: Visitor<T>): T {
         return v.visitIfNode(this)
     }
@@ -245,7 +247,7 @@ class IfNode implements AST {
 // Function Definition Node
 class FunctionNode implements AST {
     constructor(public name: string,
-        public parameters: Array<string>,
+        public signature: T.FunctionType,
         public body: AST) { }
 
     visit<T>(v: Visitor<T>): T {
@@ -255,9 +257,7 @@ class FunctionNode implements AST {
     equals(node: AST): boolean {
         return node instanceof FunctionNode
             && this.name === node.name
-            && this.parameters.length === node.parameters.length
-            && this.parameters.every(
-                (param, i) => param === node.parameters[i])
+            && this.signature.equals(node.signature)
             && this.body.equals(node.body)
     }
 }

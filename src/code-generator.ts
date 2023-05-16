@@ -1,4 +1,5 @@
 import * as AST from "./ast"
+import * as T from "./types"
 
 let emit = console.log
 
@@ -157,13 +158,13 @@ export class CodeGenerator implements AST.Visitor<void> {
     }
 
     visitFunctionNode(node: AST.FunctionNode): void {
-        if (node.parameters.length > 4)
+        if (node.signature.parameters.size > 4)
             throw Error("More than 4 params is not supported")
         emit(``)
         emit(`.global ${node.name}`)
         emit(`${node.name}:`)
         this.emitPrologue()
-        const env = this.setUpEnvironment(node.parameters)
+        const env = this.setUpEnvironment(node.signature)
         node.body.visit(env)
         this.emitEpilogue()
     }
@@ -180,8 +181,9 @@ export class CodeGenerator implements AST.Visitor<void> {
         emit(`  pop {fp, pc}`)
     }
 
-    setUpEnvironment(parameters: Array<string>) {
+    setUpEnvironment(signature: T.FunctionType) {
         let locals = new Map()
+        let parameters = Array.from(signature.parameters.keys())
         parameters.forEach((p, i) => {
             locals.set(p, 4 * i - 16)
         })

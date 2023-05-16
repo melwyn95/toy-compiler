@@ -72,3 +72,12 @@ class FunctionType implements Type {
         return `(${parameters.join(", ")}) => ${this.returnType}`
     }
 }
+
+export {
+    Type,
+    BooleanType,
+    NumberType,
+    VoidType,
+    ArrayType,
+    FunctionType,
+}
