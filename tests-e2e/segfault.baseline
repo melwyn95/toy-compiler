@@ -1,0 +1,12 @@
+function wrongReturnType(x: boolean): Array<number> {
+    if (x) {
+        return [42];
+    } else {
+
+    }
+}
+
+function main() {
+    var a = wrongReturnType(false);
+    a[0]; // Segmentation fault
+}

@@ -7,6 +7,7 @@ Working though the book ["Compiling to Assembly from Scratch"](https://keleshev.
 
 - [ ] Proper test bench set-up
 - [ ] Proper CLI
+- [ ] Fix CLI args parsing
 
 - [ ] Add for-loops
 - [ ] Add operation-assignment operator (+=, -=, ...)

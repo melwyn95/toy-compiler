@@ -33,6 +33,16 @@ class VoidType implements Type {
     }
 }
 
+class NullType implements Type {
+    equals(other: Type): boolean {
+        return other instanceof NullType
+    }
+
+    toString(): string {
+        return "null"
+    }
+}
+
 class ArrayType implements Type {
     constructor(public element: Type) { }
 
@@ -78,6 +88,7 @@ export {
     BooleanType,
     NumberType,
     VoidType,
+    NullType,
     ArrayType,
     FunctionType,
 }

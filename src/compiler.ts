@@ -2,6 +2,7 @@ import * as AST from "./ast"
 import * as T from "./types"
 import { parser } from "./parser"
 import { CodeGenerator } from "./code-generator"
+import { TypeChecker } from "./type-checker"
 
 // Integration Test
 let source = `
@@ -80,5 +81,11 @@ let file = process.argv[2]
 let contents = fs.readFileSync(file, "utf-8")
 
 let ast = parser.parseStringToCompletion(contents)
+
+let typecheck = process.argv[3]
+
+if (typecheck === "--typecheck") {
+    ast.visit(TypeChecker.empty())
+}
 
 ast.visit(CodeGenerator.empty())

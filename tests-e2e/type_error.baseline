@@ -1,0 +1,8 @@
+function factorial(n: number): number {
+    var result = 1;
+    while (n != 1) {
+        result = result * n;
+        n = n - 1;
+    }
+    return true;
+}

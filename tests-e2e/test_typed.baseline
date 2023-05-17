@@ -1,0 +1,141 @@
+function assert(x: boolean): void {
+      if (x) {
+    putchar(46);
+	//putchar(11);
+      } else {
+    putchar(70);
+	//putchar(17);
+      }
+    }
+
+    function return42(): number { return 42; }
+
+    function returnNothing(): void {}
+
+    function assert42(x: number): void {
+      assert(x == 42);
+    }
+
+    function assert1234(a: number, b: number, c: number, d: number): void {
+      assert(a == 1);
+      assert(b == 2);
+      assert(c == 3);
+      assert(d == 4);
+    }
+
+    function pair(x: number, y: number): Array<number> {
+      return [x, y];
+    }
+
+    function factorial(n: number): number {
+      if (n == 0) {
+        return 1;
+      } else {
+        return n * factorial(n - 1);
+      }
+    }
+
+    function factorial2(n: number): number {
+      var result = 1;
+      while (n != 1) {
+        result = result * n;
+	n = n - 1;
+      }
+      return result;
+    }
+
+    function main() {
+ 
+      // Test boolean and negation
+      assert(true);
+      assert(!false);
+      assert(!(!true));
+
+      //putchar(46);
+
+      // Test Equal
+      assert(42 == 42);
+      assert(!(0 == 42));
+
+      // Test NotEqual
+      assert(!(42 != 42));
+      assert(0 != 42);
+
+      // Test infix operators
+      assert(42 == 4 + 2 * (12 - 2) + 3 * (5 + 1));
+
+      // Test Call with no parameters
+      assert(return42() == 42);
+      //assert(!returnNothing());
+
+      // Test multiple parameters
+      assert42(42);
+      assert1234(1, 2, 3, 4);
+
+      //assert(rand() != 42);
+      //assert(putchar() != 1);
+
+      //while (1) {
+      //  assert(1);
+      //}
+
+      // Test If
+      if (1) 
+	assert(true);
+      else
+	assert(false);
+
+      if (0) {
+        assert(false);
+      } else {
+        assert(true);
+      }
+
+      assert(factorial(5) == 120);
+
+      // var a = 42;
+      // assert(a == 42);
+      // var x = 0;
+      //assert(4 + 2 * (12 - 2) == 24);
+      //assert(4 + 2 * (12 - 2) + 3 * (5 + 1) == 42);
+
+      var x = 4 + 2 * (12 - 2);
+      var y = 3 * (5 + 1);
+      var z = x + y;
+      assert(z == 42);
+
+      var a = 1;
+      assert(a == 1);
+      a = 0;
+      assert(a == 0);
+
+      // Test while loops
+      var i = 0;
+      while (i != 3) {
+        i = i + 1;
+      }
+      assert(i == 3);
+
+      assert(factorial2(5) == 120);
+
+      // Test booleans
+      assert(true);
+      assert(!false);
+      assert(true == true);
+      assert(true != false);
+      //assert(true == 1); // No type checking
+
+      // Test array
+      var a = [10, 20, 30]; 
+      assert(a[0] == 10);
+      assert(a[1] == 20);
+      assert(a[2] == 30);
+      assert(a[3] == undefined); // Bounds checking
+      assert(a[10000000] == undefined); // Bounds checking
+      assert(length(a) == 3);
+
+      //putchar(10); // Newline
+      return 0;
+    }
+
+//    function wrongReturnType1(): number {}  // TODO
